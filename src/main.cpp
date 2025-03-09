@@ -12,10 +12,16 @@ using namespace std;
 std::string path = "C:/Users/altti/Desktop";
 
 enum class allowedFileTypes {
+    // File types
     png,
     PNG,
     jpg,
     webp,
+    // Option selecting
+    yes,
+    no,
+    exit,
+
     none
 };
 
@@ -24,6 +30,13 @@ allowedFileTypes hashstring(const std::string& str) {
     else if (str == ".PNG")  return allowedFileTypes::PNG;
     else if (str == ".jpg")  return allowedFileTypes::jpg;
     else if (str == ".webp")  return allowedFileTypes::webp;
+    return allowedFileTypes::none;
+}
+
+allowedFileTypes selectOption(const char& key) {
+    if ((key == 'Y') || (key == 'y')) return allowedFileTypes::yes;
+    else if ((key == 'N') || (key == 'n')) return allowedFileTypes::no;
+    else if ((key == 'E') || (key == 'e')) return allowedFileTypes::exit;
     return allowedFileTypes::none;
 }
 
@@ -112,14 +125,15 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
     char selection;
     cin >> selection; // cin waits for user's input
-    switch (selection) {
-    case ('Y'):
+    switch (selectOption(selection)) {
+        //Added an enum to hande OR, since switch case can't handle them in their condition... odd
+    case (allowedFileTypes::yes):
         allFiles = findAllFiles(string(".jpg"));
         break;
-    case ('N'):
-        //startTimer();
+    case (allowedFileTypes::no):
+        coutPrint("Ei vittu sit...");
         break;
-    case ('E'):
+    case (allowedFileTypes::exit):
         exit = true;
         coutPrint("Exiting...");
         break;
@@ -132,19 +146,6 @@ bool loop(bool exit, std::vector<string> allFiles) {
 void main() {
     bool exit = false;
     std::vector<string> allFiles;
-
-    std::string const string = "this is an example string";
-
-    // If find() function doesn't find a matching letter or string from the variable, it returns a mega large number (maximum of size_t, I believe)
-    if (string.find("example") < string.length()) {
-        //cout << "Found it" << endl;
-    }
-    else {
-        //cout << "Not found" << endl;
-    }
-
-    //cout << string.find("x") << endl;
-    //cout << string.length() << endl;
 
     while (!exit) {
         exit = loop(exit, allFiles);
