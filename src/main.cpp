@@ -52,14 +52,24 @@ void coutPrint(string text) {
 }
 
 void createDirectory(const char* folder) {
-    if (!filesystem::exists(path + folder)) {
-        filesystem::create_directory(path + folder);
+    if (!filesystem::exists(path + "sorted/" + folder)) {
+        filesystem::create_directories(path + "sorted/" + folder);
         cout << folder << " created" << endl;
     }
     else {
         cout <<"'" << folder << "'" << " folder already exists, no new folders created!" << endl;
     }
+}
 
+// https://stackoverflow.com/questions/22201663/find-and-move-files-in-c#48614612
+void moveFile(const char* fileName) {
+    try {
+        filesystem::copy("from.txt", "to.txt");
+        filesystem::remove("from.txt");
+    }
+    catch (filesystem::filesystem_error& error) {
+        cout << error.what() << endl;
+    }
 }
 
 bool isInString(const filesystem::directory_entry &dirString, const string& givenString) {
@@ -110,6 +120,8 @@ std::vector<string> findAllFiles(const string& filetype) {
     return fileNames;
 }
 
+//system("CLS"); //cmd clear
+
 bool loop(bool exit, std::vector<string> allFiles) {
     cout << "MENU:" << endl;
     cout << "--------" << endl;
@@ -126,7 +138,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
     cin >> selection; // cin waits for user's input
     switch (selectOption(selection)) {
         //Added an enum to hande OR, since switch case can't handle them in their condition... odd
-    case (allowedFileTypes::all):
+    case (allowedFileTypes::search):
         coutPrint("What file would you like to target?");
         cin >> input;
         allFiles = findAllFiles(string(input));
@@ -134,10 +146,11 @@ bool loop(bool exit, std::vector<string> allFiles) {
             createDirectory(folderTypes[i]);
         }   
         break;
-    case (allowedFileTypes::search):
-        coutPrint("Ei vittu sit...");
+    case (allowedFileTypes::all):
         for (size_t i = 0; i < folderTypes.size(); i++) {
+            createDirectory(folderTypes[i]);
             findAllFiles(folderTypes[i]);
+            coutPrint("Searched all the supported file types!");
         }
         break;
     case (allowedFileTypes::exit):
@@ -145,7 +158,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
         coutPrint("Exiting...");
         break;
     default:
-        coutPrint("What?!");
+        coutPrint("What?! Command not recognized");
     }
     return exit;
 }
