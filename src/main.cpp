@@ -9,7 +9,7 @@
 
 using namespace std;
 
-std::string path = "C:/Users/altti/Desktop";
+std::string path = "C:/Users/altti/Desktop/";
 
 enum class allowedFileTypes {
     // File types
@@ -18,24 +18,23 @@ enum class allowedFileTypes {
     jpg,
     webp,
     // Option selecting
-    yes,
-    no,
+    all,
+    search,
     exit,
 
     none
 };
 
 allowedFileTypes hashstring(const std::string& str) {
-    if (str == ".png") return allowedFileTypes::png;
-    else if (str == ".PNG")  return allowedFileTypes::PNG;
+    if ((str == ".png") || (str == ".PNG")) return allowedFileTypes::png;
     else if (str == ".jpg")  return allowedFileTypes::jpg;
     else if (str == ".webp")  return allowedFileTypes::webp;
     return allowedFileTypes::none;
 }
 
 allowedFileTypes selectOption(const char& key) {
-    if ((key == 'Y') || (key == 'y')) return allowedFileTypes::yes;
-    else if ((key == 'N') || (key == 'n')) return allowedFileTypes::no;
+    if ((key == 'A') || (key == 'a')) return allowedFileTypes::all;
+    else if ((key == 'S') || (key == 's')) return allowedFileTypes::search;
     else if ((key == 'E') || (key == 'e')) return allowedFileTypes::exit;
     return allowedFileTypes::none;
 }
@@ -52,16 +51,18 @@ void coutPrint(string text) {
     cout << endl;
 }
 
-bool isInString(const filesystem::directory_entry &dirString, const string& givenString) {
-    //if (string.find(givenString) < string.length()) {
-    //    //cout << "Found it" << endl;
-    //    return true;
-    //}
-    //else {
-    //    //cout << "Not found" << endl;
-    //    return false;
-    //}
+void createDirectory(const char* folder) {
+    if (!filesystem::exists(path + folder)) {
+        filesystem::create_directory(path + folder);
+        cout << folder << " created" << endl;
+    }
+    else {
+        cout <<"'" << folder << "'" << " folder already exists, no new folders created!" << endl;
+    }
 
+}
+
+bool isInString(const filesystem::directory_entry &dirString, const string& givenString) {
     string s_string = dirString.path().filename().string();
 
     bool b_inString = (dirString.file_size() <= 500000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
@@ -82,7 +83,7 @@ std::vector<string> findAllFiles(const string& filetype) {
 
         switch (hashstring(filetype)) {
         case allowedFileTypes::png:
-            if (isInString(entry, filetype))
+            if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
             {
                 fileNames.push_back(entry.path().filename().string());
                 cout << entry << endl;
@@ -95,43 +96,49 @@ std::vector<string> findAllFiles(const string& filetype) {
                 cout << entry << endl;
             }
             break;
+        case allowedFileTypes::webp:
+            if (isInString(entry, filetype))
+            {
+                fileNames.push_back(entry.path().filename().string());
+                cout << entry << endl;
+            }
+            break;
         }
-
-
-        //switch (filetype) {
-        //case ".PNG":
-
-        //    break;
-        //}
-
-        //if (entry.file_size() <= 5000000 && isInString(entry.path().filename().string(), ".PNG")) {
-        //    fileNames.push_back(entry.path().filename().string());
-        //    //cout << "File name: " << entry << " - File size: " << entry.file_size() << endl;
-
-        //    cout << "File name: " << entry.path().filename() << endl;
-        //}
-
     }
-    cout << fileNames.size() << endl;
+    cout << "Amount of files: " << fileNames.size() << endl;
+    coutPrint("//////////////////////////////////");
     return fileNames;
 }
 
 bool loop(bool exit, std::vector<string> allFiles) {
     cout << "MENU:" << endl;
     cout << "--------" << endl;
-    cout << "Do you want to orgazine all files? Y/N" << endl;
-    cout << "Cleanup" << endl;
+    cout << "Do you want to orgazine all files?" << endl;
+    cout << "'S': singular" << endl;
+    cout << "'A': All" << endl;
     cout << "'E': Exit" << endl;
+
+    string input = "";
+
+    std::vector<const char*> folderTypes = {".png", ".jpg", ".webp"};
 
     char selection;
     cin >> selection; // cin waits for user's input
     switch (selectOption(selection)) {
         //Added an enum to hande OR, since switch case can't handle them in their condition... odd
-    case (allowedFileTypes::yes):
-        allFiles = findAllFiles(string(".jpg"));
+    case (allowedFileTypes::all):
+        coutPrint("What file would you like to target?");
+        cin >> input;
+        allFiles = findAllFiles(string(input));
+        for (size_t i = 0; i < folderTypes.size(); i++) {
+            createDirectory(folderTypes[i]);
+        }   
         break;
-    case (allowedFileTypes::no):
+    case (allowedFileTypes::search):
         coutPrint("Ei vittu sit...");
+        for (size_t i = 0; i < folderTypes.size(); i++) {
+            findAllFiles(folderTypes[i]);
+        }
         break;
     case (allowedFileTypes::exit):
         exit = true;
