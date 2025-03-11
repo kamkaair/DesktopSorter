@@ -10,17 +10,19 @@
 using namespace std;
 
 std::string path = "C:/Users/altti/Desktop/";
+std::string rootFolderPath = "C:/Users/altti/Desktop/sorted/";
 
 enum class allowedFileTypes {
     // File types
     png,
-    PNG,
     jpg,
     webp,
+    gif,
     // Option selecting
     all,
     search,
     exit,
+    clear,
 
     none
 };
@@ -29,11 +31,13 @@ allowedFileTypes hashstring(const std::string& str) {
     if ((str == ".png") || (str == ".PNG")) return allowedFileTypes::png;
     else if (str == ".jpg")  return allowedFileTypes::jpg;
     else if (str == ".webp")  return allowedFileTypes::webp;
+    else if (str == ".gif")  return allowedFileTypes::gif;
     return allowedFileTypes::none;
 }
 
 allowedFileTypes selectOption(const char& key) {
     if ((key == 'A') || (key == 'a')) return allowedFileTypes::all;
+    else if ((key == 'C') || (key == 'c')) return allowedFileTypes::clear;
     else if ((key == 'S') || (key == 's')) return allowedFileTypes::search;
     else if ((key == 'E') || (key == 'e')) return allowedFileTypes::exit;
     return allowedFileTypes::none;
@@ -62,10 +66,13 @@ void createDirectory(const char* folder) {
 }
 
 // https://stackoverflow.com/questions/22201663/find-and-move-files-in-c#48614612
-void moveFile(const char* fileName) {
+void moveFile(string fileName, const char* folder) {
     try {
-        filesystem::copy("from.txt", "to.txt");
-        filesystem::remove("from.txt");
+        //filesystem::copy(path + "from.txt", rootFolderPath + "to.txt");
+        //filesystem::remove(path + "from.txt");
+
+        filesystem::copy(path + fileName, rootFolderPath + folder + "/" + fileName);
+        filesystem::remove(path + fileName);
     }
     catch (filesystem::filesystem_error& error) {
         cout << error.what() << endl;
@@ -74,8 +81,8 @@ void moveFile(const char* fileName) {
 
 bool isInString(const filesystem::directory_entry &dirString, const string& givenString) {
     string s_string = dirString.path().filename().string();
-
-    bool b_inString = (dirString.file_size() <= 500000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
+    // Check if the file size is larger than 5 mb
+    bool b_inString = (dirString.file_size() <= 5000000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
 
     return b_inString;
 }
@@ -96,6 +103,8 @@ std::vector<string> findAllFiles(const string& filetype) {
             if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
             {
                 fileNames.push_back(entry.path().filename().string());
+                moveFile(entry.path().filename().string(), filetype.c_str());
+                //cout << entry.path().filename().string() << endl;
                 cout << entry << endl;
             }
             break;
@@ -103,6 +112,7 @@ std::vector<string> findAllFiles(const string& filetype) {
             if (isInString(entry, filetype))
             {
                 fileNames.push_back(entry.path().filename().string());
+                moveFile(entry.path().filename().string(), filetype.c_str());
                 cout << entry << endl;
             }
             break;
@@ -110,6 +120,15 @@ std::vector<string> findAllFiles(const string& filetype) {
             if (isInString(entry, filetype))
             {
                 fileNames.push_back(entry.path().filename().string());
+                moveFile(entry.path().filename().string(), filetype.c_str());
+                cout << entry << endl;
+            }
+            break;
+        case allowedFileTypes::gif:
+            if (isInString(entry, filetype))
+            {
+                fileNames.push_back(entry.path().filename().string());
+                moveFile(entry.path().filename().string(), filetype.c_str());
                 cout << entry << endl;
             }
             break;
@@ -119,8 +138,6 @@ std::vector<string> findAllFiles(const string& filetype) {
     coutPrint("//////////////////////////////////");
     return fileNames;
 }
-
-//system("CLS"); //cmd clear
 
 bool loop(bool exit, std::vector<string> allFiles) {
     cout << "MENU:" << endl;
@@ -132,7 +149,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
     string input = "";
 
-    std::vector<const char*> folderTypes = {".png", ".jpg", ".webp"};
+    std::vector<const char*> folderTypes = {".png", ".jpg", ".webp", ".gif"};
 
     char selection;
     cin >> selection; // cin waits for user's input
@@ -146,17 +163,28 @@ bool loop(bool exit, std::vector<string> allFiles) {
             createDirectory(folderTypes[i]);
         }   
         break;
+
     case (allowedFileTypes::all):
-        for (size_t i = 0; i < folderTypes.size(); i++) {
-            createDirectory(folderTypes[i]);
-            findAllFiles(folderTypes[i]);
+        coutPrint("Are you sure you want to transfer all of the files? (.png, .jpg, .webp, .gif)");
+        cin >> selection;
+        if ((selection == 'y') || (selection == 'Y')) {
+            for (size_t i = 0; i < folderTypes.size(); i++) {
+                createDirectory(folderTypes[i]);
+                findAllFiles(folderTypes[i]);
+            }
             coutPrint("Searched all the supported file types!");
         }
         break;
+
     case (allowedFileTypes::exit):
         exit = true;
         coutPrint("Exiting...");
         break;
+
+    case (allowedFileTypes::clear):
+        system("CLS"); //cmd clear
+        break;
+
     default:
         coutPrint("What?! Command not recognized");
     }
