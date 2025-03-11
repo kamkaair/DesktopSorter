@@ -68,9 +68,6 @@ void createDirectory(const char* folder) {
 // https://stackoverflow.com/questions/22201663/find-and-move-files-in-c#48614612
 void moveFile(string fileName, const char* folder) {
     try {
-        //filesystem::copy(path + "from.txt", rootFolderPath + "to.txt");
-        //filesystem::remove(path + "from.txt");
-
         filesystem::copy(path + fileName, rootFolderPath + folder + "/" + fileName);
         filesystem::remove(path + fileName);
     }
@@ -87,7 +84,7 @@ bool isInString(const filesystem::directory_entry &dirString, const string& give
     return b_inString;
 }
 
-// Make a check for file size!! Ignore files bigger than 500 mb!!!
+// Make a check for file size!! Ignore files bigger than 5 mb!!!
 // https://en.cppreference.com/w/cpp/filesystem/file_size
 
 // Make the filetype variable into a vector and give in all the filetypes you want to include
@@ -104,7 +101,6 @@ std::vector<string> findAllFiles(const string& filetype) {
             {
                 fileNames.push_back(entry.path().filename().string());
                 moveFile(entry.path().filename().string(), filetype.c_str());
-                //cout << entry.path().filename().string() << endl;
                 cout << entry << endl;
             }
             break;
@@ -143,9 +139,10 @@ bool loop(bool exit, std::vector<string> allFiles) {
     cout << "MENU:" << endl;
     cout << "--------" << endl;
     cout << "Do you want to orgazine all files?" << endl;
-    cout << "'S': singular" << endl;
+    cout << "'S': Singular" << endl;
     cout << "'A': All" << endl;
     cout << "'E': Exit" << endl;
+    cout << "'C': Clean cmd" << endl;
 
     string input = "";
 
@@ -154,7 +151,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
     char selection;
     cin >> selection; // cin waits for user's input
     switch (selectOption(selection)) {
-        //Added an enum to hande OR, since switch case can't handle them in their condition... odd
+        //Added an enum to hande OR, since switch case can't handle ORs in their condition... odd
     case (allowedFileTypes::search):
         coutPrint("What file would you like to target?");
         cin >> input;
@@ -165,7 +162,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
         break;
 
     case (allowedFileTypes::all):
-        coutPrint("Are you sure you want to transfer all of the files? (.png, .jpg, .webp, .gif)");
+        coutPrint("Are you sure you want to transfer all of the files? Y/N (.png, .jpg, .webp, .gif)");
         cin >> selection;
         if ((selection == 'y') || (selection == 'Y')) {
             for (size_t i = 0; i < folderTypes.size(); i++) {
@@ -199,135 +196,3 @@ void main() {
         exit = loop(exit, allFiles);
     }
 }
-
-/*
-* #include <mutex>
-#include <thread>
-#include <atomic>
-#include <time.h>
-* 
-    using namespace std;
-
-void coutPrint(const char* text) {
-    cout << endl;
-    cout << text << endl;
-    cout << endl;
-}
-
-void child(atomic<bool>& done, atomic<clock_t>& now, clock_t start)
-{
-    cout << "Child START!" << endl;
-    while (!done) {
-        //cout << "child doing work" << endl;
-        now = clock() - start;
-        if (now >= 12000 && !done) {
-            done = 1;
-            cout << "done by child at " << now << endl;
-        }
-        //cout << "child at " << now << endl;
-        this_thread::yield();
-    }
-}
-
-void startThread(atomic<bool>& done, atomic<clock_t>& now, clock_t start) {
-    thread t(child, std::ref(done), std::ref(now), start); // attention, without ref, you get clones
-    t.join();
-}
-
-//void parent(atomic<bool>& done, atomic<clock_t>& now, clock_t start)
-//{
-//    cout << "Parent START!" << endl;
-//    while (!done) {
-//        //cout << "parent doing work" << endl;
-//        now = clock() - start;
-//        if (now >= 2000 && !done) {
-//            done = 1;
-//            cout << "done by parent at " << now << endl;
-//        }
-//        //cout << "parent at " << now << endl;
-//        this_thread::yield();
-//    }
-//}
-
-bool parent(atomic<bool>& done, atomic<clock_t>& now, clock_t start, bool exit)
-{
-    cout << "Parent START!" << endl;
-    while (!done) {
-
-        cout << "MENU:" << endl;
-        cout << "--------" << endl;
-        cout << "0: none" << endl;
-        cout << "1: Start Timer" << endl;
-        cout << "2: Exit" << endl;
-
-        int selection = 0;
-        cin >> selection; // cin waits for user's input
-        switch (selection) {
-        case 0:
-            break;
-        case 1:
-            startThread(done, now, start);
-            break;
-        case 2:
-            exit = true;
-            coutPrint("Exiting...");
-            break;
-        default:
-            coutPrint("What?!");
-        }
-        //cout << "parent at " << now << endl;
-        this_thread::yield();
-        return exit;
-    }
-}
-
-//void startTimer() {
-//    atomic<bool> done{ 0 };
-//    clock_t start = clock();
-//    atomic<clock_t> now;
-//
-//    thread t(child, std::ref(done), std::ref(now), start); // attention, without ref, you get clones
-//    parent(done, now, start);
-//    t.join();
-//}
-
-bool loop(bool exit) {
-    cout << "MENU:" << endl;
-    cout << "--------" << endl;
-    cout << "0: none" << endl;
-    cout << "1: Start Timer" << endl;
-    cout << "2: Exit" << endl;
-
-    int selection = 0;
-    cin >> selection; // cin waits for user's input
-    switch (selection) {
-    case 0:
-        break;
-    case 1:
-        //startTimer();
-        break;
-    case 2:
-        exit = true;
-        coutPrint("Exiting...");
-        break;
-    default:
-        coutPrint("What?!");
-    }
-    return exit;
-}
-
-void main() {
-    bool exit = false;
-
-    atomic<bool> done{ 0 };
-    clock_t start = clock();
-    atomic<clock_t> now;
-
-    //thread t(child, std::ref(done), std::ref(now), start); // attention, without ref, you get clones
-    parent(done, now, start, exit);
-    //t.join();
-    //while (!exit) {
-    //    exit = loop(exit);
-    //}
-}
-*/
