@@ -84,6 +84,16 @@ bool isInString(const filesystem::directory_entry &dirString, const string& give
     return b_inString;
 }
 
+std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype) {
+    if (isInString(entry, filetype))
+    {
+        fileNames.push_back(entry.path().filename().string());
+        moveFile(entry.path().filename().string(), filetype.c_str());
+        cout << entry << endl;
+    }
+    return fileNames;
+}
+
 // Make a check for file size!! Ignore files bigger than 5 mb!!!
 // https://en.cppreference.com/w/cpp/filesystem/file_size
 
@@ -105,28 +115,15 @@ std::vector<string> findAllFiles(const string& filetype) {
             }
             break;
         case allowedFileTypes::jpg:
-            if (isInString(entry, filetype))
-            {
-                fileNames.push_back(entry.path().filename().string());
-                moveFile(entry.path().filename().string(), filetype.c_str());
-                cout << entry << endl;
-            }
+            fileNames = processFiles(fileNames, entry, filetype);
             break;
+
         case allowedFileTypes::webp:
-            if (isInString(entry, filetype))
-            {
-                fileNames.push_back(entry.path().filename().string());
-                moveFile(entry.path().filename().string(), filetype.c_str());
-                cout << entry << endl;
-            }
+            fileNames = processFiles(fileNames, entry, filetype);
             break;
+
         case allowedFileTypes::gif:
-            if (isInString(entry, filetype))
-            {
-                fileNames.push_back(entry.path().filename().string());
-                moveFile(entry.path().filename().string(), filetype.c_str());
-                cout << entry << endl;
-            }
+            fileNames = processFiles(fileNames, entry, filetype);
             break;
         }
     }
