@@ -2,15 +2,17 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
-#include <functional>
 
-//File system
+// File system
 #include <filesystem>
+// Get the desktop location
+#include <Windows.h>
+#include <shlobj.h>
 
 using namespace std;
 
-std::string path = "C:/Users/altti/Desktop/";
-std::string rootFolderPath = "C:/Users/altti/Desktop/sorted/";
+std::string path;
+std::string rootFolderPath;
 
 enum class allowedFileTypes {
     // File types
@@ -43,6 +45,17 @@ allowedFileTypes selectOption(const char& key) {
     return allowedFileTypes::none;
 }
 
+void getWinDesktopPath() {
+    char winPath[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_DESKTOP, NULL, 0, winPath))) {
+        path = std::string(winPath) + "/";
+        rootFolderPath = winPath + std::string("/sorted/");
+    }
+    cout << "Current Windows desktop path: " << path << endl;
+    cout << "Current folder path: " << rootFolderPath << endl;
+    cout << "" << endl;
+}
+
 void coutPrint(const char* text) {
     cout << endl;
     cout << text << endl;
@@ -56,8 +69,8 @@ void coutPrint(string text) {
 }
 
 void createDirectory(const char* folder) {
-    if (!filesystem::exists(path + "sorted/" + folder)) {
-        filesystem::create_directories(path + "sorted/" + folder);
+    if (!filesystem::exists(path + "/sorted/" + folder)) {
+        filesystem::create_directories(path + "/sorted/" + folder);
         cout << folder << " created" << endl;
     }
     else {
@@ -188,6 +201,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
 void main() {
     bool exit = false;
     std::vector<string> allFiles;
+    getWinDesktopPath();
 
     while (!exit) {
         exit = loop(exit, allFiles);
