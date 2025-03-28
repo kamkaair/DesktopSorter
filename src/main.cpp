@@ -22,7 +22,8 @@ enum class allowedFileTypes {
     gif,
     // Option selecting
     all,
-    search,
+    singular,
+    show,
     exit,
     clear,
 
@@ -40,8 +41,9 @@ allowedFileTypes hashstring(const std::string& str) {
 allowedFileTypes selectOption(const char& key) {
     if ((key == 'A') || (key == 'a')) return allowedFileTypes::all;
     else if ((key == 'C') || (key == 'c')) return allowedFileTypes::clear;
-    else if ((key == 'S') || (key == 's')) return allowedFileTypes::search;
+    else if ((key == 'S') || (key == 's')) return allowedFileTypes::singular;
     else if ((key == 'E') || (key == 'e')) return allowedFileTypes::exit;
+    else if ((key == 'D') || (key == 'd')) return allowedFileTypes::show;
     return allowedFileTypes::none;
 }
 
@@ -74,7 +76,8 @@ void createDirectory(const char* folder) {
         cout << folder << " created" << endl;
     }
     else {
-        cout <<"'" << folder << "'" << " folder already exists, no new folders created!" << endl;
+        cout << "'" << folder << "'" << " folder already exists, no new folders created!" << endl;
+        cout << endl;
     }
 }
 
@@ -89,7 +92,7 @@ void moveFile(string fileName, const char* folder) {
     }
 }
 
-bool isInString(const filesystem::directory_entry &dirString, const string& givenString) {
+bool isInString(const filesystem::directory_entry& dirString, const string& givenString) {
     string s_string = dirString.path().filename().string();
     // Check if the file size is larger than 5 mb
     bool b_inString = (dirString.file_size() <= 5000000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
@@ -97,11 +100,13 @@ bool isInString(const filesystem::directory_entry &dirString, const string& give
     return b_inString;
 }
 
-std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype) {
+std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype, bool shouldMoveFiles) {
     if (isInString(entry, filetype))
     {
+        char selectionF;
         fileNames.push_back(entry.path().filename().string());
-        moveFile(entry.path().filename().string(), filetype.c_str());
+        if (shouldMoveFiles)
+            moveFile(entry.path().filename().string(), filetype.c_str());
         cout << entry << endl;
     }
     return fileNames;
@@ -111,7 +116,7 @@ std::vector<string> processFiles(std::vector<string> fileNames, const filesystem
 // https://en.cppreference.com/w/cpp/filesystem/file_size
 
 // Make the filetype variable into a vector and give in all the filetypes you want to include
-std::vector<string> findAllFiles(const string& filetype) {
+std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
 
     enum allowedFileTypes fileT;
 
@@ -123,20 +128,21 @@ std::vector<string> findAllFiles(const string& filetype) {
             if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
             {
                 fileNames.push_back(entry.path().filename().string());
-                moveFile(entry.path().filename().string(), filetype.c_str());
+                if (shouldMoveFiles)
+                    moveFile(entry.path().filename().string(), filetype.c_str());
                 cout << entry << endl;
             }
             break;
         case allowedFileTypes::jpg:
-            fileNames = processFiles(fileNames, entry, filetype);
+            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
             break;
 
         case allowedFileTypes::webp:
-            fileNames = processFiles(fileNames, entry, filetype);
+            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
             break;
 
         case allowedFileTypes::gif:
-            fileNames = processFiles(fileNames, entry, filetype);
+            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
             break;
         }
     }
@@ -151,36 +157,53 @@ bool loop(bool exit, std::vector<string> allFiles) {
     cout << "Do you want to orgazine all files?" << endl;
     cout << "'S': Singular" << endl;
     cout << "'A': All" << endl;
+    cout << "'D': Show all files" << endl;
     cout << "'E': Exit" << endl;
     cout << "'C': Clean cmd" << endl;
 
     string input = "";
-
-    std::vector<const char*> folderTypes = {".png", ".jpg", ".webp", ".gif"};
+    bool shouldMoveFiles = true;
+    std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif" };
 
     char selection;
     cin >> selection; // cin waits for user's input
+    cout << endl;
     switch (selectOption(selection)) {
         //Added an enum to hande OR, since switch case can't handle ORs in their condition... odd
-    case (allowedFileTypes::search):
+    case (allowedFileTypes::singular):
         coutPrint("What file would you like to target?");
         cin >> input;
-        allFiles = findAllFiles(string(input));
+        cout << endl;
+        shouldMoveFiles = true;
+        allFiles = findAllFiles(string(input), shouldMoveFiles);
         for (size_t i = 0; i < folderTypes.size(); i++) {
             createDirectory(folderTypes[i]);
-        }   
+        }
         break;
 
     case (allowedFileTypes::all):
         coutPrint("Are you sure you want to transfer all of the files? Y/N (.png, .jpg, .webp, .gif)");
         cin >> selection;
+        cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
+            shouldMoveFiles = true;
             for (size_t i = 0; i < folderTypes.size(); i++) {
                 createDirectory(folderTypes[i]);
-                findAllFiles(folderTypes[i]);
+                findAllFiles(folderTypes[i], shouldMoveFiles);
             }
             coutPrint("Searched all the supported file types!");
         }
+        break;
+
+    case (allowedFileTypes::show):
+        coutPrint("Showing all the available files... (.png, .jpg, .webp, .gif)");
+        cout << endl;
+        shouldMoveFiles = false;
+        for (size_t i = 0; i < folderTypes.size(); i++) {
+            //createDirectory(folderTypes[i]);
+            findAllFiles(folderTypes[i], shouldMoveFiles);
+        }
+        coutPrint("Searched all the supported file types!");
         break;
 
     case (allowedFileTypes::exit):
