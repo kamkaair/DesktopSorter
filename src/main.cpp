@@ -20,6 +20,8 @@ enum class allowedFileTypes {
     jpg,
     webp,
     gif,
+    // Tags
+    unreal,
     // Option selecting
     all,
     singular,
@@ -35,6 +37,11 @@ allowedFileTypes hashstring(const std::string& str) {
     else if (str == ".jpg")  return allowedFileTypes::jpg;
     else if (str == ".webp")  return allowedFileTypes::webp;
     else if (str == ".gif")  return allowedFileTypes::gif;
+    return allowedFileTypes::none;
+}
+
+allowedFileTypes hashTag(const std::string& str) {
+    if (str == "Unreal") return allowedFileTypes::unreal;
     return allowedFileTypes::none;
 }
 
@@ -103,7 +110,6 @@ bool isInString(const filesystem::directory_entry& dirString, const string& give
 std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype, bool shouldMoveFiles) {
     if (isInString(entry, filetype))
     {
-        char selectionF;
         fileNames.push_back(entry.path().filename().string());
         if (shouldMoveFiles)
             moveFile(entry.path().filename().string(), filetype.c_str());
@@ -151,6 +157,24 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     return fileNames;
 }
 
+std::vector<string> findAllTags(const string& tag, bool shouldMoveFiles) {
+
+    enum allowedFileTypes fileT;
+
+    std::vector<string> fileNames;
+    for (const auto& entry : filesystem::directory_iterator(path)) {
+
+        switch (hashTag(tag)) {
+        case allowedFileTypes::unreal:
+            fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles);
+            break;
+        }
+    }
+    cout << "Amount of files: " << fileNames.size() << endl;
+    coutPrint("//////////////////////////////////");
+    return fileNames;
+}
+
 bool loop(bool exit, std::vector<string> allFiles) {
     cout << "MENU:" << endl;
     cout << "--------" << endl;
@@ -164,6 +188,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
     string input = "";
     bool shouldMoveFiles = true;
     std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif" };
+    std::vector<const char*> folderTags = { "Unreal" };
 
     char selection;
     cin >> selection; // cin waits for user's input
@@ -187,6 +212,8 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
             shouldMoveFiles = true;
+            createDirectory(folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+            findAllTags(folderTags[0], shouldMoveFiles);
             for (size_t i = 0; i < folderTypes.size(); i++) {
                 createDirectory(folderTypes[i]);
                 findAllFiles(folderTypes[i], shouldMoveFiles);
