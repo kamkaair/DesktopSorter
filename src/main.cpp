@@ -9,49 +9,73 @@
 #include <Windows.h>
 #include <shlobj.h>
 
+#include <thread>
+#include <atomic>
+#include <chrono>
+#include <mutex>
+
 using namespace std;
 
 std::string path;
 std::string rootFolderPath;
 
-enum class allowedFileTypes {
-    // File types
-    png,
-    jpg,
-    webp,
-    gif,
-    // Tags
-    unreal,
-    // Option selecting
-    all,
-    singular,
-    show,
-    exit,
-    clear,
+namespace Enum {
+    enum class allowedFileTypes {
+        // File types
+        png,
+        jpg,
+        webp,
+        gif,
+        docx,
+        pdf,
 
-    none
-};
+        none
+    };
 
-allowedFileTypes hashstring(const std::string& str) {
-    if ((str == ".png") || (str == ".PNG")) return allowedFileTypes::png;
-    else if (str == ".jpg")  return allowedFileTypes::jpg;
-    else if (str == ".webp")  return allowedFileTypes::webp;
-    else if (str == ".gif")  return allowedFileTypes::gif;
-    return allowedFileTypes::none;
+    enum class allowedTags {
+        // Tags
+        unreal,
+
+        noTag
+    };
+
+    enum class allowedCommands {
+        // Option selecting
+        all,
+        singular,
+        show,
+        exit,
+        clear,
+
+        noCommand
+    };
+
+    std::vector<allowedFileTypes> AllTypes = { allowedFileTypes::png, allowedFileTypes::jpg, allowedFileTypes::webp,
+        allowedFileTypes::gif, allowedFileTypes::docx, allowedFileTypes::pdf };
 }
 
-allowedFileTypes hashTag(const std::string& str) {
-    if (str == "Unreal") return allowedFileTypes::unreal;
-    return allowedFileTypes::none;
+Enum::allowedFileTypes hashstring(const std::string& str) {
+    if ((str == ".png") || (str == ".PNG")) return Enum::allowedFileTypes::png;
+    else if (str == ".jpg") return Enum::allowedFileTypes::jpg;
+    else if (str == ".webp") return Enum::allowedFileTypes::webp;
+    else if (str == ".gif") return Enum::allowedFileTypes::gif;
+    else if (str == ".docx") return Enum::allowedFileTypes::docx;
+    else if (str == ".pdf") return Enum::allowedFileTypes::pdf;
+    return Enum::allowedFileTypes::none;
 }
 
-allowedFileTypes selectOption(const char& key) {
-    if ((key == 'A') || (key == 'a')) return allowedFileTypes::all;
-    else if ((key == 'C') || (key == 'c')) return allowedFileTypes::clear;
-    else if ((key == 'S') || (key == 's')) return allowedFileTypes::singular;
-    else if ((key == 'E') || (key == 'e')) return allowedFileTypes::exit;
-    else if ((key == 'D') || (key == 'd')) return allowedFileTypes::show;
-    return allowedFileTypes::none;
+Enum::allowedTags hashTag(const std::string& str) {
+    if (str == "Unreal") return Enum::allowedTags::unreal;
+    return Enum::allowedTags::noTag;
+}
+
+Enum::allowedCommands selectOption(const char& key) {
+    if ((key == 'A') || (key == 'a')) return Enum::allowedCommands::all;
+    else if ((key == 'C') || (key == 'c')) return Enum::allowedCommands::clear;
+    else if ((key == 'S') || (key == 's')) return Enum::allowedCommands::singular;
+    else if ((key == 'E') || (key == 'e')) return Enum::allowedCommands::exit;
+    else if ((key == 'D') || (key == 'd')) return Enum::allowedCommands::show;
+    return Enum::allowedCommands::noCommand;
 }
 
 void getWinDesktopPath() {
@@ -101,8 +125,8 @@ void moveFile(string fileName, const char* folder) {
 
 bool isInString(const filesystem::directory_entry& dirString, const string& givenString) {
     string s_string = dirString.path().filename().string();
-    // Check if the file size is larger than 5 mb
-    bool b_inString = (dirString.file_size() <= 5000000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
+    // Check if the file size is larger than 9 mb
+    bool b_inString = (dirString.file_size() <= 9000000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
 
     return b_inString;
 }
@@ -123,35 +147,26 @@ std::vector<string> processFiles(std::vector<string> fileNames, const filesystem
 
 // Make the filetype variable into a vector and give in all the filetypes you want to include
 std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
-
-    enum allowedFileTypes fileT;
-
+    int iter = 0;
     std::vector<string> fileNames;
     for (const auto& entry : filesystem::directory_iterator(path)) {
-
-        switch (hashstring(filetype)) {
-        case allowedFileTypes::png:
-            if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
-            {
-                fileNames.push_back(entry.path().filename().string());
-                if (shouldMoveFiles)
-                    moveFile(entry.path().filename().string(), filetype.c_str());
-                cout << entry << endl;
+        for (const auto& enumType : Enum::AllTypes) {
+            if ((hashstring(filetype) == enumType)) {
+                if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
+                {
+                    fileNames.push_back(entry.path().filename().string());
+                    if (shouldMoveFiles)
+                        moveFile(entry.path().filename().string(), filetype.c_str());
+                    cout << entry << endl;
+                }
+                else {
+                    fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
+                }
             }
-            break;
-        case allowedFileTypes::jpg:
-            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
-            break;
-
-        case allowedFileTypes::webp:
-            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
-            break;
-
-        case allowedFileTypes::gif:
-            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
-            break;
+            iter++;
         }
     }
+    std::cout << iter << std::endl;
     cout << "Amount of files: " << fileNames.size() << endl;
     coutPrint("//////////////////////////////////");
     return fileNames;
@@ -159,13 +174,10 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
 
 std::vector<string> findAllTags(const string& tag, bool shouldMoveFiles) {
 
-    enum allowedFileTypes fileT;
-
     std::vector<string> fileNames;
     for (const auto& entry : filesystem::directory_iterator(path)) {
-
         switch (hashTag(tag)) {
-        case allowedFileTypes::unreal:
+        case Enum::allowedTags::unreal:
             fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles);
             break;
         }
@@ -187,7 +199,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
     string input = "";
     bool shouldMoveFiles = true;
-    std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif" };
+    std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf"};
     std::vector<const char*> folderTags = { "Unreal" };
 
     char selection;
@@ -195,7 +207,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
     cout << endl;
     switch (selectOption(selection)) {
         //Added an enum to hande OR, since switch case can't handle ORs in their condition... odd
-    case (allowedFileTypes::singular):
+    case (Enum::allowedCommands::singular):
         coutPrint("What file would you like to target?");
         cin >> input;
         cout << endl;
@@ -206,8 +218,8 @@ bool loop(bool exit, std::vector<string> allFiles) {
         }
         break;
 
-    case (allowedFileTypes::all):
-        coutPrint("Are you sure you want to transfer all of the files? Y/N (.png, .jpg, .webp, .gif)");
+    case (Enum::allowedCommands::all):
+        coutPrint("Are you sure you want to transfer all of the files? Y/N (.png, .jpg, .webp, .gif, .docx)");
         cin >> selection;
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
@@ -222,7 +234,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
         }
         break;
 
-    case (allowedFileTypes::show):
+    case (Enum::allowedCommands::show):
         coutPrint("Showing all the available files... (.png, .jpg, .webp, .gif)");
         cout << endl;
         shouldMoveFiles = false;
@@ -233,12 +245,12 @@ bool loop(bool exit, std::vector<string> allFiles) {
         coutPrint("Searched all the supported file types!");
         break;
 
-    case (allowedFileTypes::exit):
+    case (Enum::allowedCommands::exit):
         exit = true;
         coutPrint("Exiting...");
         break;
 
-    case (allowedFileTypes::clear):
+    case (Enum::allowedCommands::clear):
         system("CLS"); //cmd clear
         break;
 
