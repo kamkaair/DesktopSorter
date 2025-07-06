@@ -14,6 +14,8 @@
 #include <chrono>
 #include <mutex>
 
+#include <algorithm>
+
 using namespace std;
 
 std::string path;
@@ -52,6 +54,8 @@ namespace Enum {
 
     std::vector<allowedFileTypes> AllTypes = { allowedFileTypes::png, allowedFileTypes::jpg, allowedFileTypes::webp,
         allowedFileTypes::gif, allowedFileTypes::docx, allowedFileTypes::pdf };
+
+    std::vector<const char*> typeList = { ".png", ".PNG", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
 }
 
 Enum::allowedFileTypes hashstring(const std::string& str) {
@@ -145,11 +149,66 @@ std::vector<string> processFiles(std::vector<string> fileNames, const filesystem
 // Make a check for file size!! Ignore files bigger than 5 mb!!!
 // https://en.cppreference.com/w/cpp/filesystem/file_size
 
+//// Make the filetype variable into a vector and give in all the filetypes you want to include
+//std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
+//    int iter = 0;
+//    std::vector<string> fileNames;
+//    for (const auto& entry : filesystem::directory_iterator(path)) {
+//        for (const auto& enumType : Enum::AllTypes) {
+//            if ((hashstring(filetype) == enumType)) {
+//                if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
+//                {
+//                    fileNames.push_back(entry.path().filename().string());
+//                    if (shouldMoveFiles)
+//                        moveFile(entry.path().filename().string(), filetype.c_str());
+//                    cout << entry << endl;
+//                }
+//                else {
+//                    fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
+//                }
+//            }
+//            iter++;
+//        }
+//    }
+//    std::cout << iter << std::endl;
+//    cout << "Amount of files: " << fileNames.size() << endl;
+//    coutPrint("//////////////////////////////////");
+//    return fileNames;
+//}
+
 // Make the filetype variable into a vector and give in all the filetypes you want to include
 std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     int iter = 0;
     std::vector<string> fileNames;
+
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
+    auto t1 = high_resolution_clock::now();
+
     for (const auto& entry : filesystem::directory_iterator(path)) {
+
+        //bool found = (std::find(Enum::typeList.begin(), Enum::typeList.end(), filetype) != Enum::typeList.end());
+
+        //if (found) {
+        //    if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
+        //    {
+        //        fileNames.push_back(entry.path().filename().string());
+        //        if (shouldMoveFiles)
+        //            moveFile(entry.path().filename().string(), filetype.c_str());
+        //        cout << entry << endl;
+        //    }
+        //    else {
+        //        fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
+        //    }
+        //    iter++;
+        //}
+        //else {
+        //    continue;
+        //}
+
         for (const auto& enumType : Enum::AllTypes) {
             if ((hashstring(filetype) == enumType)) {
                 if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
@@ -166,6 +225,18 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
             iter++;
         }
     }
+
+    auto t2 = high_resolution_clock::now();
+
+    /* Getting number of milliseconds as an integer. */
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+
+    /* Getting number of milliseconds as a double. */
+    duration<double, std::milli> ms_double = t2 - t1;
+
+    std::cout << ms_int.count() << "ms\n";
+    std::cout << ms_double.count() << "ms\n";
+
     std::cout << iter << std::endl;
     cout << "Amount of files: " << fileNames.size() << endl;
     coutPrint("//////////////////////////////////");
