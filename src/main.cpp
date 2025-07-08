@@ -5,16 +5,15 @@
 
 // File system
 #include <filesystem>
+#include <fstream>
+
 // Get the desktop location
 #include <Windows.h>
 #include <shlobj.h>
 
-#include <thread>
-#include <atomic>
+// Time
 #include <chrono>
-#include <mutex>
-
-#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
@@ -55,7 +54,10 @@ namespace Enum {
     std::vector<allowedFileTypes> AllTypes = { allowedFileTypes::png, allowedFileTypes::jpg, allowedFileTypes::webp,
         allowedFileTypes::gif, allowedFileTypes::docx, allowedFileTypes::pdf };
 
-    std::vector<const char*> typeList = { ".png", ".PNG", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
+    //std::vector<const char*> typeList = { ".png", ".PNG", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
+    //std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
+    std::vector<const char*> folderTypes;
+    std::vector<const char*> folderTags = { "Unreal" };
 }
 
 Enum::allowedFileTypes hashstring(const std::string& str) {
@@ -116,6 +118,63 @@ void createDirectory(const char* folder) {
     }
 }
 
+void addFileType(const char* addedFile) {
+    int charLength = strlen(addedFile);
+
+    char* cpyFile = new char[charLength];
+    strcpy(cpyFile, addedFile);
+
+    Enum::folderTypes.push_back(cpyFile);
+
+    cout << "Containing file types: " << endl;
+    for (int i = 0; i < Enum::folderTypes.size(); i++) {
+        cout << Enum::folderTypes[i] + string(" ");
+    }
+    cout << endl;
+}
+
+void createFile(const char* file) {
+    if (!filesystem::exists(path + "/sorted/" + file)) {
+        ofstream createFile;
+        createFile.open(path + "/sorted/" + file);
+
+        std::vector<string> createFiles = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
+
+        for (int i = 0; i < createFiles.size(); i++) {
+            createFile << createFiles[i];
+        }
+
+        createFile.close();
+        cout << file << " created" << endl;
+    }
+    else {
+        cout << "'" << file << "'" << " folder already exists, no new files created!" << endl;
+        cout << endl;
+
+        string texties;
+        ifstream readFile(path + "/sorted/" + file);
+
+        while (getline(readFile, texties)) {
+            const char* textChar = texties.c_str();
+            char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
+
+            strcpy(textiesChar, texties.c_str());
+            Enum::folderTypes.push_back(textiesChar);
+        }
+
+        cout << "Containing file types: " << endl;
+        for (int i = 0; i < Enum::folderTypes.size(); i++) {
+            cout << Enum::folderTypes[i] + string(" ");
+        }
+
+        cout << endl;
+        addFileType(".bib");
+        coutPrint("");
+
+        readFile.close();
+    }
+}
+
 // https://stackoverflow.com/questions/22201663/find-and-move-files-in-c#48614612
 void moveFile(string fileName, const char* folder) {
     try {
@@ -127,6 +186,8 @@ void moveFile(string fileName, const char* folder) {
     }
 }
 
+// Make a check for file size!! Ignore files bigger than 9 mb!!!
+// https://en.cppreference.com/w/cpp/filesystem/file_size
 bool isInString(const filesystem::directory_entry& dirString, const string& givenString) {
     string s_string = dirString.path().filename().string();
     // Check if the file size is larger than 9 mb
@@ -145,36 +206,6 @@ std::vector<string> processFiles(std::vector<string> fileNames, const filesystem
     }
     return fileNames;
 }
-
-// Make a check for file size!! Ignore files bigger than 5 mb!!!
-// https://en.cppreference.com/w/cpp/filesystem/file_size
-
-//// Make the filetype variable into a vector and give in all the filetypes you want to include
-//std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
-//    int iter = 0;
-//    std::vector<string> fileNames;
-//    for (const auto& entry : filesystem::directory_iterator(path)) {
-//        for (const auto& enumType : Enum::AllTypes) {
-//            if ((hashstring(filetype) == enumType)) {
-//                if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
-//                {
-//                    fileNames.push_back(entry.path().filename().string());
-//                    if (shouldMoveFiles)
-//                        moveFile(entry.path().filename().string(), filetype.c_str());
-//                    cout << entry << endl;
-//                }
-//                else {
-//                    fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
-//                }
-//            }
-//            iter++;
-//        }
-//    }
-//    std::cout << iter << std::endl;
-//    cout << "Amount of files: " << fileNames.size() << endl;
-//    coutPrint("//////////////////////////////////");
-//    return fileNames;
-//}
 
 // Make the filetype variable into a vector and give in all the filetypes you want to include
 std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
@@ -209,7 +240,7 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
         //    continue;
         //}
 
-        for (const auto& enumType : Enum::AllTypes) {
+        for (const auto& enumType : Enum::AllTypes) { // Maybe replace this with a regular array with filetypes
             if ((hashstring(filetype) == enumType)) {
                 if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
                 {
@@ -234,10 +265,8 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
 
-    std::cout << ms_int.count() << "ms\n";
-    std::cout << ms_double.count() << "ms\n";
-
-    std::cout << iter << std::endl;
+    std::cout << ms_int.count() << "ms" << " - " << ms_double.count() << "ms" << std::endl;
+    std::cout << "Iterations: " << iter << std::endl;
     cout << "Amount of files: " << fileNames.size() << endl;
     coutPrint("//////////////////////////////////");
     return fileNames;
@@ -264,14 +293,20 @@ bool loop(bool exit, std::vector<string> allFiles) {
     cout << "Do you want to orgazine all files?" << endl;
     cout << "'S': Singular" << endl;
     cout << "'A': All" << endl;
-    cout << "'D': Show all files" << endl;
+    cout << "'D': Show all desktop files" << endl;
+
+    cout << endl;
+
+    cout << "'W': Add an entry" << endl;
+    cout << "'R': Remove an entry" << endl;
+
+    cout << endl;
+
     cout << "'E': Exit" << endl;
     cout << "'C': Clean cmd" << endl;
 
     string input = "";
     bool shouldMoveFiles = true;
-    std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf"};
-    std::vector<const char*> folderTags = { "Unreal" };
 
     char selection;
     cin >> selection; // cin waits for user's input
@@ -283,9 +318,11 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cin >> input;
         cout << endl;
         shouldMoveFiles = true;
+        createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+        createFile("values.txt");
         allFiles = findAllFiles(string(input), shouldMoveFiles);
-        for (size_t i = 0; i < folderTypes.size(); i++) {
-            createDirectory(folderTypes[i]);
+        for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
+            createDirectory(Enum::folderTypes[i]);
         }
         break;
 
@@ -295,13 +332,14 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
             shouldMoveFiles = true;
-            createDirectory(folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
-            findAllTags(folderTags[0], shouldMoveFiles);
-            for (size_t i = 0; i < folderTypes.size(); i++) {
-                createDirectory(folderTypes[i]);
-                findAllFiles(folderTypes[i], shouldMoveFiles);
-            }
-            coutPrint("Searched all the supported file types!");
+            //createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+            createFile("values.txt");
+            //findAllTags(Enum::folderTags[0], shouldMoveFiles);
+            //for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
+            //    createDirectory(Enum::folderTypes[i]);
+            //    findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
+            //}
+            //coutPrint("Searched all the supported file types!");
         }
         break;
 
@@ -309,9 +347,9 @@ bool loop(bool exit, std::vector<string> allFiles) {
         coutPrint("Showing all the available files... (.png, .jpg, .webp, .gif)");
         cout << endl;
         shouldMoveFiles = false;
-        for (size_t i = 0; i < folderTypes.size(); i++) {
+        for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
             //createDirectory(folderTypes[i]);
-            findAllFiles(folderTypes[i], shouldMoveFiles);
+            findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
         }
         coutPrint("Searched all the supported file types!");
         break;
@@ -335,6 +373,7 @@ void main() {
     bool exit = false;
     std::vector<string> allFiles;
     getWinDesktopPath();
+    createFile("values.txt");
 
     while (!exit) {
         exit = loop(exit, allFiles);
