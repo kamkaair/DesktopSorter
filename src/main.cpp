@@ -45,6 +45,8 @@ namespace Enum {
         all,
         singular,
         show,
+        add,
+        remove,
         exit,
         clear,
 
@@ -79,6 +81,8 @@ Enum::allowedCommands selectOption(const char& key) {
     if ((key == 'A') || (key == 'a')) return Enum::allowedCommands::all;
     else if ((key == 'C') || (key == 'c')) return Enum::allowedCommands::clear;
     else if ((key == 'S') || (key == 's')) return Enum::allowedCommands::singular;
+    else if ((key == 'W') || (key == 'w')) return Enum::allowedCommands::add;
+    else if ((key == 'R') || (key == 'r')) return Enum::allowedCommands::remove;
     else if ((key == 'E') || (key == 'e')) return Enum::allowedCommands::exit;
     else if ((key == 'D') || (key == 'd')) return Enum::allowedCommands::show;
     return Enum::allowedCommands::noCommand;
@@ -118,19 +122,39 @@ void createDirectory(const char* folder) {
     }
 }
 
-void addFileType(const char* addedFile) {
-    int charLength = strlen(addedFile);
+bool addFileType(const char* addedFile) {
+    //bool found = (std::find(Enum::typeList.begin(), Enum::typeList.end(), filetype) != Enum::typeList.end());
 
-    char* cpyFile = new char[charLength];
-    strcpy(cpyFile, addedFile);
+    //std::cout << addedFile << endl;
+    //cout << endl;
 
-    Enum::folderTypes.push_back(cpyFile);
+    //if (std::find(Enum::folderTypes.begin(), Enum::folderTypes.end(), addedFile) != Enum::folderTypes.end()) {
+    //    std::cout << "not sexisting!" << endl;
+    //}
+    //else {
+    //    std::cout << "sexistings!!!!" << endl;
+    //}
+
+    for (int i = 0; i < Enum::folderTypes.size(); i++) {
+        if (std::strcmp(Enum::folderTypes[i], addedFile) == 0) {
+            cout << "Found type in the folder! " << Enum::folderTypes[i] << " - " << addedFile << endl;
+        }
+    }
+
+    char* cpyAdd = new char[strlen(addedFile)];
+    strcpy(cpyAdd, addedFile);
+
+    Enum::folderTypes.push_back(cpyAdd);
+
+    // TODO: Write the new changes into the save file
 
     cout << "Containing file types: " << endl;
     for (int i = 0; i < Enum::folderTypes.size(); i++) {
         cout << Enum::folderTypes[i] + string(" ");
     }
     cout << endl;
+
+    return true;
 }
 
 void createFile(const char* file) {
@@ -148,7 +172,7 @@ void createFile(const char* file) {
         cout << file << " created" << endl;
     }
     else {
-        cout << "'" << file << "'" << " folder already exists, no new files created!" << endl;
+        cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl;
         cout << endl;
 
         string texties;
@@ -167,8 +191,6 @@ void createFile(const char* file) {
             cout << Enum::folderTypes[i] + string(" ");
         }
 
-        cout << endl;
-        addFileType(".bib");
         coutPrint("");
 
         readFile.close();
@@ -332,15 +354,24 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
             shouldMoveFiles = true;
-            //createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+            createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
             createFile("values.txt");
-            //findAllTags(Enum::folderTags[0], shouldMoveFiles);
-            //for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
-            //    createDirectory(Enum::folderTypes[i]);
-            //    findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
-            //}
-            //coutPrint("Searched all the supported file types!");
+            findAllTags(Enum::folderTags[0], shouldMoveFiles);
+            for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
+                createDirectory(Enum::folderTypes[i]);
+                findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
+            }
+            coutPrint("Searched all the supported file types!");
         }
+        break;
+
+    case (Enum::allowedCommands::add):
+        std::cin >> input;
+        addFileType(input.c_str());
+        break;
+
+    case (Enum::allowedCommands::remove):
+
         break;
 
     case (Enum::allowedCommands::show):
