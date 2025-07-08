@@ -1,2 +1,2 @@
 # DesktopSorter
-Sorts files in your desktop
+Personal desktop sorter and practice project
