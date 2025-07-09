@@ -122,11 +122,11 @@ void createDirectory(const char* folder) {
     }
 }
 
-bool writeFile(const char* addedFile, vector<const char*> container) {
+bool removeSave(const char* addedFile, vector<const char*> container, int i) {
     char* cpyAdd = new char[strlen(addedFile)];
     strcpy(cpyAdd, addedFile);
 
-    Enum::folderTypes.push_back(cpyAdd);
+    Enum::folderTypes.erase(container.begin()+i);
 
     ofstream addFile;
     string strCache;
@@ -144,6 +144,52 @@ bool writeFile(const char* addedFile, vector<const char*> container) {
     return true;
 }
 
+bool writeSave(const char* addedFile, vector<const char*> container) {
+    char* cpyAdd = new char[strlen(addedFile)];
+    strcpy(cpyAdd, addedFile);
+
+    //doDelete == true ? Enum::folderTypes.push_back(cpyAdd) : Enum::folderTypes.erase(cpyAdd);
+    Enum::folderTypes.push_back(cpyAdd);
+
+    ofstream addFile;
+    string strCache;
+
+    addFile.open(path + "/sorted/" + "values.txt"); // PROBLEM
+    cout << "New items: " << endl;
+    for (int i = 0; i < container.size(); i++) {
+        cout << container[i] + string(" ");
+        addFile << container[i] + string("\n");
+    }
+
+    coutPrint("//////////////////////////////////");
+    addFile.close();
+
+    return true;
+}
+
+bool readSave(const char* addedFile, vector<const char*> container) {
+    string texties;
+    ifstream readFile(path + "/sorted/" + addedFile);
+
+    while (getline(readFile, texties)) {
+        const char* textChar = texties.c_str();
+        char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
+
+        strcpy(textiesChar, texties.c_str());
+        container.push_back(textiesChar);
+    }
+
+    cout << "Containing file types: " << endl;
+    for (int i = 0; i < container.size(); i++) {
+        cout << container[i] + string(" ");
+    }
+
+    coutPrint("");
+    readFile.close();
+
+    return true;
+}
+
 bool addFileType(const char* addedFile) {
     for (int i = 0; i < Enum::folderTypes.size(); i++) {
         if (std::strcmp(Enum::folderTypes[i], addedFile) == 0) {
@@ -153,25 +199,7 @@ bool addFileType(const char* addedFile) {
         }
     }
 
-    //char* cpyAdd = new char[strlen(addedFile)];
-    //strcpy(cpyAdd, addedFile);
-
-    //Enum::folderTypes.push_back(cpyAdd);
-
-    //ofstream addFile;
-    //string strCache;
-
-    //addFile.open(path + "/sorted/" + "values.txt");
-    //cout << "New items: " << endl;
-    //for (int i = 0; i < Enum::folderTypes.size(); i++) {
-    //    cout << Enum::folderTypes[i] + string(" ");
-    //    addFile << Enum::folderTypes[i] + string("\n");
-    //}
-
-    //coutPrint("//////////////////////////////////");
-    //addFile.close();
-
-    if (!writeFile(addedFile, Enum::folderTypes))
+    if (!writeSave(addedFile, Enum::folderTypes))
         return false;
 
     return true;
@@ -182,63 +210,49 @@ bool removeFileType(const char* addedFile) {
         if (std::strcmp(Enum::folderTypes[i], addedFile) == 0) {
             cout << "Found type in the folder! " << Enum::folderTypes[i] << " - " << addedFile << endl;
             coutPrint("//////////////////////////////////");
-            return false;
+
+            if (!removeSave(addedFile, Enum::folderTypes, i))
+                return false;
+
+            return true;
         }
     }
-
-    char* cpyAdd = new char[strlen(addedFile)];
-    strcpy(cpyAdd, addedFile);
-
-    Enum::folderTypes.push_back(cpyAdd);
-
-    ofstream addFile;
-    string strCache;
-
-    addFile.open(path + "/sorted/" + "values.txt");
-    cout << "New items: " << endl;
-    for (int i = 0; i < Enum::folderTypes.size(); i++) {
-        cout << Enum::folderTypes[i] + string(" ");
-        addFile << Enum::folderTypes[i] + string("\n");
-    }
-
-    coutPrint("//////////////////////////////////");
-    addFile.close();
-
-    return true;
+    return false;
 }
 
 void createFile(const char* file) {
     if (!filesystem::exists(path + "/sorted/" + file)) {
         cout << string(file) + " doesn't exist, creating... " << endl;
         cout << endl;
-        //coutPrint(string(file) + " doesn't exist, creating... ");
         std::vector<const char*> createFiles = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
-        if (!writeFile(file, createFiles))
+        if (!writeSave(file, createFiles))
             cout << "value.txt creation failed! Stupid penits developer's fault" << endl;
     }
     else {
         cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl;
         cout << endl;
 
-        string texties;
-        ifstream readFile(path + "/sorted/" + file);
+        //string texties;
+        //ifstream readFile(path + "/sorted/" + file);
 
-        while (getline(readFile, texties)) {
-            const char* textChar = texties.c_str();
-            char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
+        //while (getline(readFile, texties)) {
+        //    const char* textChar = texties.c_str();
+        //    char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
 
-            strcpy(textiesChar, texties.c_str());
-            Enum::folderTypes.push_back(textiesChar);
-        }
+        //    strcpy(textiesChar, texties.c_str());
+        //    Enum::folderTypes.push_back(textiesChar);
+        //}
 
-        cout << "Containing file types: " << endl;
-        for (int i = 0; i < Enum::folderTypes.size(); i++) {
-            cout << Enum::folderTypes[i] + string(" ");
-        }
+        //cout << "Containing file types: " << endl;
+        //for (int i = 0; i < Enum::folderTypes.size(); i++) {
+        //    cout << Enum::folderTypes[i] + string(" ");
+        //}
 
-        coutPrint("");
+        //coutPrint("");
+        //readFile.close();
 
-        readFile.close();
+        if(!readSave(file, Enum::folderTypes))
+            cout << file << " file reading failed" << endl;
     }
 }
 
@@ -287,26 +301,6 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     auto t1 = high_resolution_clock::now();
 
     for (const auto& entry : filesystem::directory_iterator(path)) {
-
-        //bool found = (std::find(Enum::typeList.begin(), Enum::typeList.end(), filetype) != Enum::typeList.end());
-
-        //if (found) {
-        //    if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
-        //    {
-        //        fileNames.push_back(entry.path().filename().string());
-        //        if (shouldMoveFiles)
-        //            moveFile(entry.path().filename().string(), filetype.c_str());
-        //        cout << entry << endl;
-        //    }
-        //    else {
-        //        fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
-        //    }
-        //    iter++;
-        //}
-        //else {
-        //    continue;
-        //}
-
         for (const auto& enumType : Enum::AllTypes) { // Maybe replace this with a regular array with filetypes
             if ((hashstring(filetype) == enumType)) {
                 if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
@@ -411,14 +405,18 @@ bool loop(bool exit, std::vector<string> allFiles) {
         break;
 
     case (Enum::allowedCommands::add):
-        cout << "Write a filename to add: ";
+        cout << "Write a filename to ADD: ";
         std::cin >> input;
         cout << endl;
         addFileType(input.c_str());
         break;
 
     case (Enum::allowedCommands::remove):
-
+        cout << "Write a filename to REMOVE: ";
+        std::cin >> input;
+        cout << endl;
+        if (!removeFileType(input.c_str()))
+            cout << "Remove FAILED" << endl;
         break;
 
     case (Enum::allowedCommands::show):
