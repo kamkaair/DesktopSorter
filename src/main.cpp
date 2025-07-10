@@ -56,8 +56,6 @@ namespace Enum {
     std::vector<allowedFileTypes> AllTypes = { allowedFileTypes::png, allowedFileTypes::jpg, allowedFileTypes::webp,
         allowedFileTypes::gif, allowedFileTypes::docx, allowedFileTypes::pdf };
 
-    //std::vector<const char*> typeList = { ".png", ".PNG", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
-    //std::vector<const char*> folderTypes = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
     std::vector<const char*> folderTypes;
     std::vector<const char*> folderTags = { "Unreal" };
 }
@@ -122,7 +120,7 @@ void createDirectory(const char* folder) {
     }
 }
 
-bool removeSave(const char* addedFile, vector<const char*> container, int i) {
+bool removeSave(const char* addedFile, vector<const char*>& container, int i) {
     char* cpyAdd = new char[strlen(addedFile)];
     strcpy(cpyAdd, addedFile);
 
@@ -144,7 +142,7 @@ bool removeSave(const char* addedFile, vector<const char*> container, int i) {
     return true;
 }
 
-bool writeSave(const char* addedFile, vector<const char*> container) {
+bool writeSave(const char* addedFile, vector<const char*>& container) {
     char* cpyAdd = new char[strlen(addedFile)];
     strcpy(cpyAdd, addedFile);
 
@@ -154,7 +152,7 @@ bool writeSave(const char* addedFile, vector<const char*> container) {
     ofstream addFile;
     string strCache;
 
-    addFile.open(path + "/sorted/" + "values.txt"); // PROBLEM
+    addFile.open(path + "/sorted/" + "values.txt");
     cout << "New items: " << endl;
     for (int i = 0; i < container.size(); i++) {
         cout << container[i] + string(" ");
@@ -167,7 +165,7 @@ bool writeSave(const char* addedFile, vector<const char*> container) {
     return true;
 }
 
-bool readSave(const char* addedFile, vector<const char*> container) {
+bool readSave(const char* addedFile, vector<const char*>& container) {
     string texties;
     ifstream readFile(path + "/sorted/" + addedFile);
 
@@ -208,9 +206,8 @@ bool addFileType(const char* addedFile) {
 bool removeFileType(const char* addedFile) {
     for (int i = 0; i < Enum::folderTypes.size(); i++) {
         if (std::strcmp(Enum::folderTypes[i], addedFile) == 0) {
-            cout << "Found type in the folder! " << Enum::folderTypes[i] << " - " << addedFile << endl;
-            coutPrint("//////////////////////////////////");
-
+            cout << "Found " << Enum::folderTypes[i] << " -type in the folder! Deleting..." << endl;
+            cout << endl;
             if (!removeSave(addedFile, Enum::folderTypes, i))
                 return false;
 
@@ -225,31 +222,16 @@ void createFile(const char* file) {
         cout << string(file) + " doesn't exist, creating... " << endl;
         cout << endl;
         std::vector<const char*> createFiles = { ".png", ".jpg", ".webp", ".gif", ".docx", ".pdf" };
+
         if (!writeSave(file, createFiles))
             cout << "value.txt creation failed! Stupid penits developer's fault" << endl;
+
+        for (const char* files : createFiles)
+            Enum::folderTypes.push_back(files);
     }
     else {
         cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl;
         cout << endl;
-
-        //string texties;
-        //ifstream readFile(path + "/sorted/" + file);
-
-        //while (getline(readFile, texties)) {
-        //    const char* textChar = texties.c_str();
-        //    char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
-
-        //    strcpy(textiesChar, texties.c_str());
-        //    Enum::folderTypes.push_back(textiesChar);
-        //}
-
-        //cout << "Containing file types: " << endl;
-        //for (int i = 0; i < Enum::folderTypes.size(); i++) {
-        //    cout << Enum::folderTypes[i] + string(" ");
-        //}
-
-        //coutPrint("");
-        //readFile.close();
 
         if(!readSave(file, Enum::folderTypes))
             cout << file << " file reading failed" << endl;
@@ -408,7 +390,8 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cout << "Write a filename to ADD: ";
         std::cin >> input;
         cout << endl;
-        addFileType(input.c_str());
+        if (!addFileType(input.c_str()))
+            cout << "Addition FAILED" << endl;
         break;
 
     case (Enum::allowedCommands::remove):
@@ -416,7 +399,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
         std::cin >> input;
         cout << endl;
         if (!removeFileType(input.c_str()))
-            cout << "Remove FAILED" << endl;
+            cout << "Invalid filetype" << endl;
         break;
 
     case (Enum::allowedCommands::show):
