@@ -22,18 +22,6 @@ std::string rootFolderPath;
 const char* saveFile = "values.txt";
 
 namespace Enum {
-    enum class allowedFileTypes {
-        // File types
-        png,
-        jpg,
-        webp,
-        gif,
-        docx,
-        pdf,
-
-        none
-    };
-
     enum class allowedTags {
         // Tags
         unreal,
@@ -47,6 +35,7 @@ namespace Enum {
         singular,
         show,
         add,
+        showtype,
         remove,
         exit,
         clear,
@@ -54,21 +43,8 @@ namespace Enum {
         noCommand
     };
 
-    std::vector<allowedFileTypes> AllTypes = { allowedFileTypes::png, allowedFileTypes::jpg, allowedFileTypes::webp,
-        allowedFileTypes::gif, allowedFileTypes::docx, allowedFileTypes::pdf };
-
     std::vector<const char*> folderTypes;
     std::vector<const char*> folderTags = { "Unreal" };
-}
-
-Enum::allowedFileTypes hashstring(const std::string& str) {
-    if ((str == ".png") || (str == ".PNG")) return Enum::allowedFileTypes::png;
-    else if (str == ".jpg") return Enum::allowedFileTypes::jpg;
-    else if (str == ".webp") return Enum::allowedFileTypes::webp;
-    else if (str == ".gif") return Enum::allowedFileTypes::gif;
-    else if (str == ".docx") return Enum::allowedFileTypes::docx;
-    else if (str == ".pdf") return Enum::allowedFileTypes::pdf;
-    return Enum::allowedFileTypes::none;
 }
 
 Enum::allowedTags hashTag(const std::string& str) {
@@ -82,6 +58,7 @@ Enum::allowedCommands selectOption(const char& key) {
     else if ((key == 'S') || (key == 's')) return Enum::allowedCommands::singular;
     else if ((key == 'W') || (key == 'w')) return Enum::allowedCommands::add;
     else if ((key == 'R') || (key == 'r')) return Enum::allowedCommands::remove;
+    else if ((key == 'Q') || (key == 'q')) return Enum::allowedCommands::showtype;
     else if ((key == 'E') || (key == 'e')) return Enum::allowedCommands::exit;
     else if ((key == 'D') || (key == 'd')) return Enum::allowedCommands::show;
     return Enum::allowedCommands::noCommand;
@@ -130,8 +107,7 @@ bool doesFileExist(const char* file) {
 
 bool removeSave(const char* addedFile, vector<const char*>& container, int i) {
     char* cpyAdd = new char[strlen(addedFile)];
-    strcpy(cpyAdd, addedFile);
-    //strcpy_s(chArray, phrase.size() + 1, phrase.c_str());
+    strcpy_s(cpyAdd, strlen(addedFile) + 1, addedFile);
 
     Enum::folderTypes.erase(container.begin()+i);
 
@@ -153,7 +129,7 @@ bool removeSave(const char* addedFile, vector<const char*>& container, int i) {
 
 bool writeSave(const char* addedFile, vector<const char*>& container) {
     char* cpyAdd = new char[strlen(addedFile)];
-    strcpy(cpyAdd, addedFile);
+    strcpy_s(cpyAdd, strlen(addedFile) + 1, addedFile);
 
     //doDelete == true ? Enum::folderTypes.push_back(cpyAdd) : Enum::folderTypes.erase(cpyAdd);
     Enum::folderTypes.push_back(cpyAdd);
@@ -182,7 +158,7 @@ bool readSave(const char* addedFile, vector<const char*>& container) {
         const char* textChar = texties.c_str();
         char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
 
-        strcpy(textiesChar, texties.c_str());
+        strcpy_s(textiesChar, texties.size() + 1 + 1, texties.c_str());
         container.push_back(textiesChar);
     }
 
@@ -292,8 +268,8 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     auto t1 = high_resolution_clock::now();
 
     for (const auto& entry : filesystem::directory_iterator(path)) {
-        for (const auto& enumType : Enum::AllTypes) { // Maybe replace this with a regular array with filetypes
-            if ((hashstring(filetype) == enumType)) {
+        for (const auto& enumType : Enum::folderTypes) { // Maybe replace this with a regular array with filetypes
+            if (filetype == enumType) {
                 if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
                 {
                     fileNames.push_back(entry.path().filename().string());
@@ -351,6 +327,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
     cout << "'W': Add an entry" << endl;
     cout << "'R': Remove an entry" << endl;
+    cout << "'Q': Show all file types" << endl;
 
     cout << endl;
 
@@ -416,6 +393,14 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cout << endl;
         if (!removeFileType(input.c_str()))
             cout << "Invalid filetype" << endl;
+        break;
+
+    case (Enum::allowedCommands::showtype):
+        cout << "List of all the file types: " << endl;
+        cout << endl;
+        for (const char* types : Enum::folderTypes) 
+            cout << types << " " << endl;  
+        cout << endl;
         break;
 
     case (Enum::allowedCommands::show):
