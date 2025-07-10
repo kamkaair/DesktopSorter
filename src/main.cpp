@@ -19,6 +19,7 @@ using namespace std;
 
 std::string path;
 std::string rootFolderPath;
+const char* saveFile = "values.txt";
 
 namespace Enum {
     enum class allowedFileTypes {
@@ -120,16 +121,24 @@ void createDirectory(const char* folder) {
     }
 }
 
+bool doesFileExist(const char* file) {
+    if (!filesystem::exists(path + "/sorted/" + file))
+        return false;
+
+    return true;
+}
+
 bool removeSave(const char* addedFile, vector<const char*>& container, int i) {
     char* cpyAdd = new char[strlen(addedFile)];
     strcpy(cpyAdd, addedFile);
+    //strcpy_s(chArray, phrase.size() + 1, phrase.c_str());
 
     Enum::folderTypes.erase(container.begin()+i);
 
     ofstream addFile;
     string strCache;
 
-    addFile.open(path + "/sorted/" + "values.txt");
+    addFile.open(path + "/sorted/" + saveFile);
     cout << "New items: " << endl;
     for (int i = 0; i < container.size(); i++) {
         cout << container[i] + string(" ");
@@ -152,7 +161,7 @@ bool writeSave(const char* addedFile, vector<const char*>& container) {
     ofstream addFile;
     string strCache;
 
-    addFile.open(path + "/sorted/" + "values.txt");
+    addFile.open(path + "/sorted/" + saveFile);
     cout << "New items: " << endl;
     for (int i = 0; i < container.size(); i++) {
         cout << container[i] + string(" ");
@@ -352,17 +361,21 @@ bool loop(bool exit, std::vector<string> allFiles) {
     bool shouldMoveFiles = true;
 
     char selection;
+    cout << "> ";
     cin >> selection; // cin waits for user's input
     cout << endl;
     switch (selectOption(selection)) {
         //Added an enum to hande OR, since switch case can't handle ORs in their condition... odd
     case (Enum::allowedCommands::singular):
         coutPrint("What file would you like to target?");
+        cout << "> ";
         cin >> input;
         cout << endl;
         shouldMoveFiles = true;
         createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
-        createFile("values.txt");
+        if (!doesFileExist(saveFile))
+            createFile(saveFile);
+
         allFiles = findAllFiles(string(input), shouldMoveFiles);
         for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
             createDirectory(Enum::folderTypes[i]);
@@ -371,12 +384,15 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
     case (Enum::allowedCommands::all):
         coutPrint("Are you sure you want to transfer all of the files? Y/N (.png, .jpg, .webp, .gif, .docx)");
+        cout << "> ";
         cin >> selection;
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
             shouldMoveFiles = true;
             createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
-            createFile("values.txt");
+            if (!doesFileExist(saveFile))
+                createFile(saveFile);
+                            
             findAllTags(Enum::folderTags[0], shouldMoveFiles);
             for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
                 createDirectory(Enum::folderTypes[i]);
@@ -432,7 +448,7 @@ void main() {
     bool exit = false;
     std::vector<string> allFiles;
     getWinDesktopPath();
-    createFile("values.txt");
+    createFile(saveFile);
 
     while (!exit) {
         exit = loop(exit, allFiles);
