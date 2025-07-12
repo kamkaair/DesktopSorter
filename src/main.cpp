@@ -270,7 +270,7 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     for (const auto& entry : filesystem::directory_iterator(path)) {
         for (const auto& enumType : Enum::folderTypes) { // Maybe replace this with a regular array with filetypes
             if (filetype == enumType) {
-                if (isInString(entry, ".png") || (isInString(entry, ".PNG")))
+                if ((filetype == ".png" && (isInString(entry, ".png")) || (isInString(entry, ".PNG"))))
                 {
                     fileNames.push_back(entry.path().filename().string());
                     if (shouldMoveFiles)
@@ -353,10 +353,11 @@ bool loop(bool exit, std::vector<string> allFiles) {
         if (!doesFileExist(saveFile))
             createFile(saveFile);
 
-        allFiles = findAllFiles(string(input), shouldMoveFiles);
         for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
             createDirectory(Enum::folderTypes[i]);
         }
+        allFiles = findAllFiles(string(input), shouldMoveFiles);
+
         break;
 
     case (Enum::allowedCommands::all):
@@ -404,11 +405,10 @@ bool loop(bool exit, std::vector<string> allFiles) {
         break;
 
     case (Enum::allowedCommands::show):
-        coutPrint("Showing all the available files... (.png, .jpg, .webp, .gif)");
+        coutPrint("Showing all the available files...");
         cout << endl;
         shouldMoveFiles = false;
         for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
-            //createDirectory(folderTypes[i]);
             findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
         }
         coutPrint("Searched all the supported file types!");
@@ -433,6 +433,7 @@ void main() {
     bool exit = false;
     std::vector<string> allFiles;
     getWinDesktopPath();
+    createDirectory("");
     createFile(saveFile);
 
     while (!exit) {
