@@ -234,10 +234,35 @@ void moveFile(string fileName, const char* folder) {
     }
 }
 
+// Just an interesting exercise. To be deleted...
+// https://www.digitalocean.com/community/tutorials/reverse-string-c-plus-plus
+string getFileType(const filesystem::directory_entry& dirString) {
+    string newStr = dirString.path().string();
+    cout << "Original: " << newStr << endl;
+    reverse(newStr.begin(), newStr.end());
+
+    string strCache;
+    for (int i = 0; i < 9; i++) {
+        if (newStr[i] == '.') {
+            strCache = strCache + '.';
+            break;
+        }
+
+        strCache = strCache + newStr[i];
+    }
+    newStr = strCache;
+    reverse(newStr.begin(), newStr.end());
+    cout << "ReREVERSE: " << newStr << endl;
+
+    return newStr;
+}
+
 // Make a check for file size!! Ignore files bigger than 9 mb!!!
 // https://en.cppreference.com/w/cpp/filesystem/file_size
 bool isInString(const filesystem::directory_entry& dirString, const string& givenString) {
-    string s_string = dirString.path().filename().string();
+    //string s_string = dirString.path().filename().string();
+    string s_string = dirString.path().extension().string();
+
     // Check if the file size is larger than 9 mb
     bool b_inString = (dirString.file_size() <= 9000000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
 
@@ -268,7 +293,8 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     auto t1 = high_resolution_clock::now();
 
     for (const auto& entry : filesystem::directory_iterator(path)) {
-        for (const auto& enumType : Enum::folderTypes) { // Maybe replace this with a regular array with filetypes
+        //cout << getFileType(entry) << endl; // test for filetype method
+        for (const auto& enumType : Enum::folderTypes) {
             if (filetype == enumType) {
                 if ((filetype == ".png" && (isInString(entry, ".png")) || (isInString(entry, ".PNG"))))
                 {
