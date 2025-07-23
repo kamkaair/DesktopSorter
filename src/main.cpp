@@ -22,13 +22,6 @@ std::string rootFolderPath;
 const char* saveFile = "values.txt";
 
 namespace Enum {
-    enum class allowedTags {
-        // Tags
-        unreal,
-
-        noTag
-    };
-
     enum class allowedCommands {
         // Option selecting
         all,
@@ -44,13 +37,13 @@ namespace Enum {
         noCommand
     };
 
+    enum lineTypes {
+        files = '1',
+        tags = '2'
+    };
+
     std::vector<const char*> folderTypes;
     std::vector<const char*> folderTags;
-}
-
-Enum::allowedTags hashTag(const std::string& str) {
-    if (str == "Unreal") return Enum::allowedTags::unreal;
-    return Enum::allowedTags::noTag;
 }
 
 Enum::allowedCommands selectOption(const char& key) {
@@ -176,56 +169,66 @@ bool readSave(const char* addedFile, vector<const char*>& container) {
     return true;
 }
 
-bool readSaveNew(const char* addedFile, vector<const char*>& container) {
-    string texties;
-    ifstream readFile(path + "/sorted/" + addedFile);
+void readLines(string lineText, vector<const char*>& container) {
+    string strCache;
+    vector<string> strVec;
 
-    while (getline(readFile, texties)) {
-        string strCache;
-        
+    cout << "Initial: " << lineText[0] << endl;
+    cout << "Initial: " << lineText[1] << endl;
 
-        for (int i = 0; i < texties.size(); i++) {
-            if (texties[i] == ';') {
-                const char* charCache = strCache.c_str();
-                char* newChar = new char[strCache.size() + 1];
-                strcpy_s(newChar, texties.size() + 1 + 1, texties.c_str());
-
-                container.push_back(newChar);
-                strCache = "";
-                //cout << endl;
-            }
-            else if (texties[i] == '}') {
-                break;
-            }
-            else if (texties[i] == '{') {
-                continue;
-            }
-            else {
-                //string strPrint;
-                strCache = strCache + texties[i];
-                cout << strCache << " - ";
-            }
+    for (int i = 1; i < lineText.size(); i++) { // skip the first entry, since it contains the line number / ID
+        if (lineText[i] == ';') { // Push_back the current selection of characters and clear the string
+            strVec.push_back(strCache);
+            strCache = "";
         }
-
-        coutPrint("");
-        for (int i = 0; i < container.size(); i++) {
-            cout << container[i] << " - " << endl;
+        else if (lineText[i] == '}') { // End if found
+            break;
+        }
+        else if (lineText[i] == '{') {
+            continue;
+        }
+        else {
+            strCache = strCache + lineText[i]; // Add the current character into the cache
         }
     }
 
-    //while (getline(readFile, texties)) {
-    //    const char* textChar = texties.c_str();
-    //    char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
+    cout << "Containing following items: " << endl;
+    for (int i = 0; i < strVec.size(); i++) {
+        container.push_back(strVec[i].c_str());
+        cout << container[i] << endl;
+    }
+    cout << endl;
+}
 
-    //    strcpy_s(textiesChar, texties.size() + 1 + 1, texties.c_str());
-    //    container.push_back(textiesChar);
-    //    cout << textiesChar << endl;
-    //}
+bool readSaveNew(const char* addedFile) {
+    // Push line one to filetypes, line two to tags
+    string lineText;
+    ifstream readFile(path + "/sorted/" + addedFile);
 
-    //cout << "Containing file types: " << endl;
-    //for (int i = 0; i < container.size(); i++) {
-    //    cout << container[i] + string(" ");
-    //}
+    while (getline(readFile, lineText)) {
+
+        if ('1' == lineText[0]) {
+            readLines(lineText, Enum::folderTypes);
+        }
+        else if ('2' == lineText[0]) {
+            readLines(lineText, Enum::folderTags);
+        }
+        //for (int i = 0; i < texties.size(); i++) {
+        //    if (texties[i] == ';') {
+        //        strVec.push_back(strCache);
+        //        strCache = "";
+        //    }
+        //    else if (texties[i] == '}') {
+        //        break;
+        //    }
+        //    else if (texties[i] == '{') {
+        //        continue;
+        //    }
+        //    else {
+        //        strCache = strCache + texties[i];
+        //    }
+        //}
+    }
 
     coutPrint("");
     readFile.close();
@@ -262,7 +265,7 @@ bool removeFileType(const char* addedFile) {
     return false;
 }
 
-void createFile(const char* file) {
+void readWriteFile(const char* file) {
     if (!filesystem::exists(path + "/sorted/" + file)) {
         cout << string(file) + " doesn't exist, creating... " << endl;
         cout << endl;
@@ -278,8 +281,10 @@ void createFile(const char* file) {
         cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl;
         cout << endl;
 
-        if(!readSave(file, Enum::folderTypes))
+        if (!readSaveNew(file))
             cout << file << " file reading failed" << endl;
+        //if(!readSave(file, Enum::folderTypes))
+        //    cout << file << " file reading failed" << endl;
     }
 }
 
@@ -387,15 +392,20 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
 }
 
 std::vector<string> findAllTags(const string& tag, bool shouldMoveFiles) {
-
+    int iter = 0;
     std::vector<string> fileNames;
     for (const auto& entry : filesystem::directory_iterator(path)) {
-        switch (hashTag(tag)) {
-        case Enum::allowedTags::unreal:
-            fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles);
-            break;
+        for (const auto& tags : Enum::folderTags) {
+            if (tag == tags)
+            {
+                fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles);
+                cout << "Number of iterations: " << iter << endl;
+                break;
+            }
+            iter++;
         }
     }
+
     cout << "Amount of files: " << fileNames.size() << endl;
     coutPrint("//////////////////////////////////");
     return fileNames;
@@ -437,7 +447,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
         shouldMoveFiles = true;
         createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
         if (!doesFileExist(saveFile))
-            createFile(saveFile);
+            readWriteFile(saveFile);
 
         for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
             createDirectory(Enum::folderTypes[i]);
@@ -455,9 +465,13 @@ bool loop(bool exit, std::vector<string> allFiles) {
             shouldMoveFiles = true;
             createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
             if (!doesFileExist(saveFile))
-                createFile(saveFile);
-                            
-            findAllTags(Enum::folderTags[0], shouldMoveFiles);
+                readWriteFile(saveFile);
+
+            // First go through all the tags, prioritized higher than the filetypes
+            for (size_t i = 0; i < Enum::folderTags.size(); i++) {
+                findAllTags(Enum::folderTags[i], shouldMoveFiles);
+            }                         
+
             for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
                 createDirectory(Enum::folderTypes[i]);
                 findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
@@ -502,7 +516,7 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
     case (Enum::allowedCommands::test):
         coutPrint("WHAAAAT, OH HELL NAAAA");
-        readSaveNew("test.txt", Enum::folderTags);
+        readSaveNew("test.txt");
         break;
 
     case (Enum::allowedCommands::exit):
@@ -525,7 +539,7 @@ void main() {
     std::vector<string> allFiles;
     getWinDesktopPath();
     createDirectory("");
-    createFile(saveFile);
+    readWriteFile(saveFile);
 
     while (!exit) {
         exit = loop(exit, allFiles);
