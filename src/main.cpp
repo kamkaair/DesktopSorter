@@ -171,6 +171,22 @@ bool newWriteSave(const char* addedFile, vector<const char*>& container, vector<
     writeSaveEntry(addFile, container, 1);
     writeSaveEntry(addFile, container2, 2);
 
+    //addFile << string("1{");
+    //for (int i = 0; i < container.size(); i++) {
+    //    cout << container[i] + string(" ");
+    //    addFile << container[i] + string(";");
+    //}
+    //addFile << string("}");
+
+    //addFile << string("\n");
+
+    //addFile << string("2{");
+    //for (int i = 0; i < container2.size(); i++) {
+    //    cout << container2[i] + string(" ");
+    //    addFile << container2[i] + string(";");
+    //}
+    //addFile << string("}");
+
     coutPrint("//////////////////////////////////");
     addFile.close();
 
@@ -201,7 +217,7 @@ bool readSave(const char* addedFile, vector<const char*>& container) {
         const char* textChar = texties.c_str();
         char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
 
-        strcpy_s(textiesChar, texties.size() + 1 + 1, texties.c_str());
+        strcpy_s(textiesChar, texties.size() + 1, texties.c_str());
         container.push_back(textiesChar);
     }
 
@@ -241,7 +257,12 @@ void readLines(string lineText, vector<const char*>& container) {
 
     cout << "Containing following items: " << endl;
     for (int i = 0; i < strVec.size(); i++) {
-        container.push_back(strVec[i].c_str());
+        const char* strC = strVec[i].c_str();
+        char* newChar = new char[strVec[i].size() + 1];
+
+        strcpy_s(newChar, strVec[i].size() + 1, strVec[i].c_str());
+
+        container.push_back(newChar);
         cout << container[i] << endl;
     }
     cout << endl;
@@ -256,9 +277,11 @@ bool readSaveNew(const char* addedFile) {
 
         if ('1' == lineText[0]) {
             readLines(lineText, Enum::folderTypes);
+            cout << lineText[0] << endl;
         }
         else if ('2' == lineText[0]) {
             readLines(lineText, Enum::folderTags);
+            cout << lineText[0] << endl;
         }
     }
 
@@ -313,7 +336,7 @@ void readWriteFile(const char* file) {
         for (const char* files : createTypes)
             Enum::folderTypes.push_back(files);
 
-        for (const char* tags : createTypes)
+        for (const char* tags : createTags)
             Enum::folderTags.push_back(tags);
     }
     else {
@@ -556,8 +579,8 @@ bool loop(bool exit, std::vector<string> allFiles) {
     case (Enum::allowedCommands::test):
         coutPrint("WHAAAAT, OH HELL NAAAA");
         //readSaveNew("test.txt");
-        for (const auto& files : Enum::folderTags) {
-            cout << "TAGS: " << files << endl; // FOCKED
+        for (const auto& tags : Enum::folderTags) {
+            cout << "TAGS: " << tags << endl; // FOCKED
         }
         for (const auto& files : Enum::folderTypes) {
             cout << "TYPES: " << files << endl; // FOCKED
