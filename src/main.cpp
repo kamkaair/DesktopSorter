@@ -26,13 +26,13 @@ namespace Enum {
         // Option selecting
         all,
         singular,
-        show,
         add,
-        showtype,
         remove,
+        showfiles,
+        showtype,
+        showtag,
         exit,
         clear,
-        test,
 
         noCommand
     };
@@ -46,18 +46,22 @@ namespace Enum {
     std::vector<const char*> folderTags;
 }
 
-Enum::allowedCommands selectOption(const char& key) {
-    if ((key == 'A') || (key == 'a')) return Enum::allowedCommands::all;
-    else if ((key == 'C') || (key == 'c')) return Enum::allowedCommands::clear;
-    else if ((key == 'S') || (key == 's')) return Enum::allowedCommands::singular;
-    else if ((key == 'W') || (key == 'w')) return Enum::allowedCommands::add;
-    else if ((key == 'R') || (key == 'r')) return Enum::allowedCommands::remove;
-    else if ((key == 'Q') || (key == 'q')) return Enum::allowedCommands::showtype;
-    else if ((key == 'E') || (key == 'e')) return Enum::allowedCommands::exit;
-    else if ((key == 'D') || (key == 'd')) return Enum::allowedCommands::show;
-    else if ((key == 'T') || (key == 't')) return Enum::allowedCommands::test;
+Enum::allowedCommands selectOption(const char key) {
+    char lowerKey = std::tolower(static_cast<unsigned char>(key));
 
-    return Enum::allowedCommands::noCommand;
+    switch (lowerKey) {
+    case ('a'): return Enum::allowedCommands::all;
+    case ('c'): return Enum::allowedCommands::clear;
+    case ('s'): return Enum::allowedCommands::singular;
+    case ('w'): return Enum::allowedCommands::add;
+    case ('r'): return Enum::allowedCommands::remove;
+    case ('q'): return Enum::allowedCommands::showtype;
+    case ('t'): return Enum::allowedCommands::showtag;
+    case ('d'): return Enum::allowedCommands::showfiles;
+    case ('e'): return Enum::allowedCommands::exit;
+
+    default: return Enum::allowedCommands::noCommand;
+    }
 }
 
 void getWinDesktopPath() {
@@ -359,19 +363,18 @@ bool isInString(const filesystem::directory_entry& dirString, const string& give
     return b_inString;
 }
 
-std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype, bool shouldMoveFiles, bool useFileNames) {
+std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype, bool useFileNames) {
     if (isInString(entry, filetype, useFileNames))
     {
         fileNames.push_back(entry.path().filename().string());
-        if (shouldMoveFiles)
-            moveFile(entry.path().filename().string(), filetype.c_str());
+        moveFile(entry.path().filename().string(), filetype.c_str());
         cout << entry << endl;
     }
     return fileNames;
 }
 
 // Make the filetype variable into a vector and give in all the filetypes you want to include
-std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
+std::vector<string> findAllFiles(const string& filetype) {
     int iter = 0;
     bool useFileNames = true;
     std::vector<string> fileNames;
@@ -387,12 +390,11 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
         if ((filetype == ".png" && ((isInString(entry, ".png", useFileNames)) || (isInString(entry, ".PNG", useFileNames)))))
         {
             fileNames.push_back(entry.path().filename().string());
-            if (shouldMoveFiles)
-                moveFile(entry.path().filename().string(), filetype.c_str());
+            moveFile(entry.path().filename().string(), filetype.c_str());
             cout << entry << endl;
         }
         else {
-            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles, useFileNames);
+            fileNames = processFiles(fileNames, entry, filetype, useFileNames);
         }
         iter++;
     }
@@ -412,12 +414,12 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     return fileNames;
 }
 
-std::vector<string> findAllTags(const string& tag, bool shouldMoveFiles) {
+std::vector<string> findAllTags(const string& tag) {
     int iter = 0;
     bool useFileNames = false;
     std::vector<string> fileNames;
     for (const auto& entry : filesystem::directory_iterator(path)) {
-        fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles, useFileNames);
+        fileNames = processFiles(fileNames, entry, tag, useFileNames);
         iter++;
     }
 
@@ -439,7 +441,7 @@ bool loop(bool exit) {
 
     cout << "'W': Add an entry" << endl;
     cout << "'R': Remove an entry" << endl;
-    cout << "'Q': Show all file types" << endl;
+    cout << "'Q': Show all Filetypes/Tags" << endl;
 
     cout << endl;
 
@@ -447,7 +449,6 @@ bool loop(bool exit) {
     cout << "'C': Clean cmd" << endl;
 
     string input = "";
-    bool shouldMoveFiles = true;
 
     char selection;
     cout << "> ";
@@ -460,8 +461,7 @@ bool loop(bool exit) {
         cout << "> ";
         cin >> input;
         cout << endl;
-        shouldMoveFiles = true;
-        createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+
         if (!doesFileExist(saveFile))
             readWriteFile(saveFile);
         for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
@@ -471,8 +471,8 @@ bool loop(bool exit) {
             createDirectory(Enum::folderTags[i]);
         }
 
-        findAllTags(string(input), shouldMoveFiles);
-        findAllFiles(string(input), shouldMoveFiles);
+        findAllTags(string(input));
+        findAllFiles(string(input));
 
         break;
 
@@ -482,20 +482,19 @@ bool loop(bool exit) {
         cin >> selection;
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
-            shouldMoveFiles = true;
-            //createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+
             if (!doesFileExist(saveFile))
                 readWriteFile(saveFile);
 
             // First go through all the tags, prioritized higher than the filetypes
             for (size_t i = 0; i < Enum::folderTags.size(); i++) {
                 createDirectory(Enum::folderTags[i]);
-                findAllTags(Enum::folderTags[i], shouldMoveFiles);
+                findAllTags(Enum::folderTags[i]);
             }                         
 
             for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
                 createDirectory(Enum::folderTypes[i]);
-                findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
+                findAllFiles(Enum::folderTypes[i]);
             }
             coutPrint("Searched all the supported file types!");
         }
@@ -518,32 +517,30 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::showtype):
-        cout << "List of all the file types: " << endl;
-        cout << endl;
-        for (const char* types : Enum::folderTypes) 
-            cout << types << " " << endl;  
-        cout << endl;
-        break;
-
-    case (Enum::allowedCommands::show):
         coutPrint("Showing all the available files...");
         cout << endl;
-        shouldMoveFiles = false;
-        for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
-            findAllFiles(Enum::folderTypes[i], shouldMoveFiles);
+        cout << "All the filetypes and tags: " << endl;
+        for (const auto& files : Enum::folderTypes) {
+            cout << "TYPES: " << files << endl;
         }
-        coutPrint("Searched all the supported file types!");
+        cout << endl;
+        for (const auto& tags : Enum::folderTags) {
+            cout << "TAGS: " << tags << endl;
+        }
+        cout << endl;
         break;
 
-    case (Enum::allowedCommands::test):
-        coutPrint("WHAAAAT, OH HELL NAAAA");
-        //readSaveNew("test.txt");
-        for (const auto& tags : Enum::folderTags) {
-            cout << "TAGS: " << tags << endl; // FOCKED
+    case (Enum::allowedCommands::showfiles):
+        coutPrint("Showing all the desktop files: ");
+        for (const auto& entry : filesystem::directory_iterator(path)) {
+            string conEntry = entry.path().filename().string();
+            cout << "- " << conEntry << endl;
         }
-        for (const auto& files : Enum::folderTypes) {
-            cout << "TYPES: " << files << endl; // FOCKED
-        }
+        cout << endl;
+        break;
+
+    case (Enum::allowedCommands::showtag):
+        coutPrint("I'm a test button: ");
         break;
 
     case (Enum::allowedCommands::exit):
