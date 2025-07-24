@@ -171,43 +171,11 @@ bool newWriteSave(const char* addedFile, vector<const char*>& container, vector<
     writeSaveEntry(addFile, container, 1);
     writeSaveEntry(addFile, container2, 2);
 
-    //addFile << string("1{");
-    //for (int i = 0; i < container.size(); i++) {
-    //    cout << container[i] + string(" ");
-    //    addFile << container[i] + string(";");
-    //}
-    //addFile << string("}");
-
-    //addFile << string("\n");
-
-    //addFile << string("2{");
-    //for (int i = 0; i < container2.size(); i++) {
-    //    cout << container2[i] + string(" ");
-    //    addFile << container2[i] + string(";");
-    //}
-    //addFile << string("}");
-
     coutPrint("//////////////////////////////////");
     addFile.close();
 
     return true;
 }
-
-//addFile << string("1{");
-//for (int i = 0; i < container.size(); i++) {
-//    cout << container[i] + string(" ");
-//    addFile << container[i] + string(";");
-//}
-//addFile << string("}");
-
-//addFile << string("\n");
-
-//addFile << string("2{");
-//for (int i = 0; i < container2.size(); i++) {
-//    cout << container2[i] + string(" ");
-//    addFile << container2[i] + string(";");
-//}
-//addFile << string("}");
 
 bool readSave(const char* addedFile, vector<const char*>& container) {
     string texties;
@@ -232,12 +200,9 @@ bool readSave(const char* addedFile, vector<const char*>& container) {
     return true;
 }
 
-void readLines(string lineText, vector<const char*>& container) {
+void readLines(string lineText, vector<const char*>& container, string items) {
     string strCache;
     vector<string> strVec;
-
-    //cout << "Initial: " << lineText[0] << endl;
-    //cout << "Initial: " << lineText[1] << endl;
 
     for (int i = 1; i < lineText.size(); i++) { // skip the first entry, since it contains the line number / ID
         if (lineText[i] == ';') { // Push_back the current selection of characters and clear the string
@@ -255,12 +220,12 @@ void readLines(string lineText, vector<const char*>& container) {
         }
     }
 
-    cout << "Containing following items: " << endl;
+    cout << "Containing following " << items << ": " << endl;
     for (int i = 0; i < strVec.size(); i++) {
         const char* strC = strVec[i].c_str();
         char* newChar = new char[strVec[i].size() + 1];
 
-        strcpy_s(newChar, strVec[i].size() + 1, strVec[i].c_str());
+        strcpy_s(newChar, strVec[i].size() + 1, strVec[i].c_str()); // convert from string to char
 
         container.push_back(newChar);
         cout << container[i] << endl;
@@ -275,17 +240,15 @@ bool readSaveNew(const char* addedFile) {
 
     while (getline(readFile, lineText)) {
 
-        if ('1' == lineText[0]) {
-            readLines(lineText, Enum::folderTypes);
-            cout << lineText[0] << endl;
+        //if ('1' == lineText[0]) {
+        if (Enum::lineTypes::files == lineText[0]) { // files = '1'
+            readLines(lineText, Enum::folderTypes, "filetypes");
         }
-        else if ('2' == lineText[0]) {
-            readLines(lineText, Enum::folderTags);
-            cout << lineText[0] << endl;
+        //else if ('2' == lineText[0]) {
+        else if (Enum::lineTypes::tags == lineText[0]) { // tags = '2'
+            readLines(lineText, Enum::folderTags, "tags");
         }
     }
-
-    coutPrint("");
     readFile.close();
 
     return true;
@@ -386,9 +349,9 @@ string getFileType(const filesystem::directory_entry& dirString) {
 
 // Make a check for file size!! Ignore files bigger than 9 mb!!!
 // https://en.cppreference.com/w/cpp/filesystem/file_size
-bool isInString(const filesystem::directory_entry& dirString, const string& givenString) {
-    //string s_string = dirString.path().filename().string();
-    string s_string = dirString.path().extension().string();
+bool isInString(const filesystem::directory_entry& dirString, const string& givenString, bool useFileNames) {
+    string s_string; // Since tags read the whole filename and filetypes only getting the extension prevents errors
+    useFileNames ? s_string = dirString.path().extension().string() : s_string = dirString.path().filename().string();
 
     // Check if the file size is larger than 9 mb
     bool b_inString = (dirString.file_size() <= 9000000 && s_string.find(givenString) < s_string.length()) ? /*if*/ b_inString = true : /*else*/ b_inString = false;
@@ -396,8 +359,8 @@ bool isInString(const filesystem::directory_entry& dirString, const string& give
     return b_inString;
 }
 
-std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype, bool shouldMoveFiles) {
-    if (isInString(entry, filetype))
+std::vector<string> processFiles(std::vector<string> fileNames, const filesystem::directory_entry& entry, const string& filetype, bool shouldMoveFiles, bool useFileNames) {
+    if (isInString(entry, filetype, useFileNames))
     {
         fileNames.push_back(entry.path().filename().string());
         if (shouldMoveFiles)
@@ -410,6 +373,7 @@ std::vector<string> processFiles(std::vector<string> fileNames, const filesystem
 // Make the filetype variable into a vector and give in all the filetypes you want to include
 std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     int iter = 0;
+    bool useFileNames = true;
     std::vector<string> fileNames;
 
     using std::chrono::high_resolution_clock;
@@ -420,22 +384,17 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
     auto t1 = high_resolution_clock::now();
 
     for (const auto& entry : filesystem::directory_iterator(path)) {
-        //cout << getFileType(entry) << endl; // test for filetype method
-        for (const auto& enumType : Enum::folderTypes) {
-            if (filetype == enumType) {
-                if ((filetype == ".png" && (isInString(entry, ".png")) || (isInString(entry, ".PNG"))))
-                {
-                    fileNames.push_back(entry.path().filename().string());
-                    if (shouldMoveFiles)
-                        moveFile(entry.path().filename().string(), filetype.c_str());
-                    cout << entry << endl;
-                }
-                else {
-                    fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles);
-                }
-            }
-            iter++;
+        if ((filetype == ".png" && ((isInString(entry, ".png", useFileNames)) || (isInString(entry, ".PNG", useFileNames)))))
+        {
+            fileNames.push_back(entry.path().filename().string());
+            if (shouldMoveFiles)
+                moveFile(entry.path().filename().string(), filetype.c_str());
+            cout << entry << endl;
         }
+        else {
+            fileNames = processFiles(fileNames, entry, filetype, shouldMoveFiles, useFileNames);
+        }
+        iter++;
     }
 
     auto t2 = high_resolution_clock::now();
@@ -455,25 +414,20 @@ std::vector<string> findAllFiles(const string& filetype, bool shouldMoveFiles) {
 
 std::vector<string> findAllTags(const string& tag, bool shouldMoveFiles) {
     int iter = 0;
+    bool useFileNames = false;
     std::vector<string> fileNames;
     for (const auto& entry : filesystem::directory_iterator(path)) {
-        for (const auto& tags : Enum::folderTags) {
-            if (tag == tags)
-            {
-                fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles);
-                cout << "Number of iterations: " << iter << endl;
-                break;
-            }
-            iter++;
-        }
+        fileNames = processFiles(fileNames, entry, tag, shouldMoveFiles, useFileNames);
+        iter++;
     }
 
+    cout << "Number of iterations: " << iter << endl;
     cout << "Amount of files: " << fileNames.size() << endl;
     coutPrint("//////////////////////////////////");
     return fileNames;
 }
 
-bool loop(bool exit, std::vector<string> allFiles) {
+bool loop(bool exit) {
     cout << "MENU:" << endl;
     cout << "--------" << endl;
     cout << "Do you want to orgazine all files?" << endl;
@@ -510,11 +464,15 @@ bool loop(bool exit, std::vector<string> allFiles) {
         createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
         if (!doesFileExist(saveFile))
             readWriteFile(saveFile);
-
         for (size_t i = 0; i < Enum::folderTypes.size(); i++) {
             createDirectory(Enum::folderTypes[i]);
         }
-        allFiles = findAllFiles(string(input), shouldMoveFiles);
+        for (size_t i = 0; i < Enum::folderTags.size(); i++) {
+            createDirectory(Enum::folderTags[i]);
+        }
+
+        findAllTags(string(input), shouldMoveFiles);
+        findAllFiles(string(input), shouldMoveFiles);
 
         break;
 
@@ -525,12 +483,13 @@ bool loop(bool exit, std::vector<string> allFiles) {
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
             shouldMoveFiles = true;
-            createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
+            //createDirectory(Enum::folderTags[0]);// Testing tags (they should be first, because they take the priority over the filename)
             if (!doesFileExist(saveFile))
                 readWriteFile(saveFile);
 
             // First go through all the tags, prioritized higher than the filetypes
             for (size_t i = 0; i < Enum::folderTags.size(); i++) {
+                createDirectory(Enum::folderTags[i]);
                 findAllTags(Enum::folderTags[i], shouldMoveFiles);
             }                         
 
@@ -604,12 +563,11 @@ bool loop(bool exit, std::vector<string> allFiles) {
 
 void main() {
     bool exit = false;
-    std::vector<string> allFiles;
     getWinDesktopPath();
     createDirectory("");
     readWriteFile(saveFile);
 
     while (!exit) {
-        exit = loop(exit, allFiles);
+        exit = loop(exit);
     }
 }
