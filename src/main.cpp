@@ -87,6 +87,16 @@ void coutPrint(string text) {
     cout << endl;
 }
 
+void openFileEdit(ofstream& addFile, const char* file) {
+    addFile.open(path + "/sorted/" + file);
+    cout << "Opened file: " << file << endl;
+}
+
+void closeFileEdit(ofstream& addFile) {
+    coutPrint("//////////////////////////////////");
+    addFile.close();
+}
+
 void createDirectory(const char* folder) {
     if (!filesystem::exists(path + "/sorted/" + folder)) {
         filesystem::create_directories(path + "/sorted/" + folder);
@@ -105,51 +115,6 @@ bool doesFileExist(const char* file) {
     return true;
 }
 
-//bool removeSave(const char* addedFile, vector<const char*>& container, int i) {
-//    char* cpyAdd = new char[strlen(addedFile)];
-//    strcpy_s(cpyAdd, strlen(addedFile) + 1, addedFile);
-//
-//    Enum::folderTypes.erase(container.begin()+i);
-//
-//    ofstream addFile;
-//    string strCache;
-//
-//    addFile.open(path + "/sorted/" + saveFile);
-//    cout << "New items: " << endl;
-//    for (int i = 0; i < container.size(); i++) {
-//        cout << container[i] + string(" ");
-//        addFile << container[i] + string("\n");
-//    }
-//
-//    coutPrint("//////////////////////////////////");
-//    addFile.close();
-//
-//    return true;
-//}
-
-//bool writeSave(const char* addedFile, vector<const char*>& container) {
-//    char* cpyAdd = new char[strlen(addedFile)];
-//    strcpy_s(cpyAdd, strlen(addedFile) + 1, addedFile);
-//
-//    //doDelete == true ? Enum::folderTypes.push_back(cpyAdd) : Enum::folderTypes.erase(cpyAdd);
-//    Enum::folderTypes.push_back(cpyAdd);
-//
-//    ofstream addFile;
-//    string strCache;
-//
-//    addFile.open(path + "/sorted/" + saveFile);
-//    cout << "New items: " << endl;
-//    for (int i = 0; i < container.size(); i++) {
-//        cout << container[i] + string(" ");
-//        addFile << container[i] + string("\n");
-//    }
-//
-//    coutPrint("//////////////////////////////////");
-//    addFile.close();
-//
-//    return true;
-//}
-
 void writeSaveEntry(ofstream& addFile, vector<const char*>& container, int count) {
     addFile << to_string(count) + string("{");
     for (int i = 0; i < container.size(); i++) {
@@ -159,24 +124,16 @@ void writeSaveEntry(ofstream& addFile, vector<const char*>& container, int count
     addFile << string("}") + string("\n");
 }
 
-bool newWriteSave(const char* addedFile, vector<const char*>& container, vector<const char*>& container2) {
-    char* cpyAdd = new char[strlen(addedFile)];
-    strcpy_s(cpyAdd, strlen(addedFile) + 1, addedFile);
+// Function to be used with openFileEdit() and closeFileEdit()
+bool newWriteSave(const char* addedFile, vector<const char*>& container, ofstream& addFile, int line, bool addToVector) {
+    if (addToVector) {
+        char* cpyAdd = new char[strlen(addedFile)];
+        strcpy_s(cpyAdd, strlen(addedFile) + 1, addedFile);
 
-    //doDelete == true ? Enum::folderTypes.push_back(cpyAdd) : Enum::folderTypes.erase(cpyAdd);
-    Enum::folderTypes.push_back(cpyAdd);
+        container.push_back(cpyAdd);
+    }
 
-    ofstream addFile;
-    string strCache;
-
-    addFile.open(path + "/sorted/" + saveFile);
-    cout << "New items: " << endl;
-
-    writeSaveEntry(addFile, container, 1);
-    writeSaveEntry(addFile, container2, 2);
-
-    coutPrint("//////////////////////////////////");
-    addFile.close();
+    writeSaveEntry(addFile, container, line);
 
     return true;
 }
@@ -202,29 +159,6 @@ bool newRemoveSave(const char* addedFile, vector<const char*>& container, int i)
 
     return true;
 }
-
-//bool readSave(const char* addedFile, vector<const char*>& container) {
-//    string texties;
-//    ifstream readFile(path + "/sorted/" + addedFile);
-//
-//    while (getline(readFile, texties)) {
-//        const char* textChar = texties.c_str();
-//        char* textiesChar = new char[texties.size() + 1]; // allocate memory for the char
-//
-//        strcpy_s(textiesChar, texties.size() + 1, texties.c_str());
-//        container.push_back(textiesChar);
-//    }
-//
-//    cout << "Containing file types: " << endl;
-//    for (int i = 0; i < container.size(); i++) {
-//        cout << container[i] + string(" ");
-//    }
-//
-//    coutPrint("");
-//    readFile.close();
-//
-//    return true;
-//}
 
 void readLines(string lineText, vector<const char*>& container, string items) {
     string strCache;
@@ -281,6 +215,9 @@ bool readSaveNew(const char* addedFile) {
 }
 
 bool addFileType(const char* addedFile) {
+    ofstream editFile;
+    int lineEdit = 1;
+
     for (int i = 0; i < Enum::folderTypes.size(); i++) {
         if (std::strcmp(Enum::folderTypes[i], addedFile) == 0) {
             cout << "Found type in the folder! " << Enum::folderTypes[i] << " - " << addedFile << endl;
@@ -288,27 +225,27 @@ bool addFileType(const char* addedFile) {
             return false;
         }
     }
-
-    //if (!writeSave(addedFile, Enum::folderTypes))
-    //    return false;
-    if (!newWriteSave(addedFile, Enum::folderTypes, Enum::folderTags))
-        return false;
+    openFileEdit(editFile, saveFile);
+    if (addedFile[0] == '.') { // This way of adding and writing saves is probably quite stupid, but it'll do for now
+        lineEdit = 1;
+        cout << string("Adding ") + addedFile + string(" to file types") << endl;
+        if (!newWriteSave(addedFile, Enum::folderTypes, editFile, lineEdit, true))
+            return false;
+        writeSaveEntry(editFile, Enum::folderTags, 2);
+    }
+    else {
+        lineEdit = 2;
+        cout << string("Adding ") + addedFile + string(" to tags") << endl;
+        writeSaveEntry(editFile, Enum::folderTypes, 1);
+        if (!newWriteSave(addedFile, Enum::folderTags, editFile, lineEdit, true))
+            return false;
+    }
+    closeFileEdit(editFile);
 
     return true;
 }
 
 bool removeFileType(const char* addedFile) {
-    //for (int i = 0; i < container.size(); i++) {
-    //    if (std::strcmp(container[i], addedFile) == 0) {
-    //        cout << "Found " << container[i] << " -type in the folder! Deleting..." << endl;
-    //        cout << endl;
-    //        if (!newRemoveSave(addedFile, container, i))
-    //            return false;
-
-    //        return true;
-    //    }
-    //}
-
     for (int i = 0; i < Enum::folderTypes.size(); i++) {
         if (std::strcmp(Enum::folderTypes[i], addedFile) == 0) {
             cout << "Found " << Enum::folderTypes[i] << " -type in the folder! Deleting..." << endl;
@@ -339,16 +276,22 @@ void readWriteFile(const char* file) {
         cout << endl;
         std::vector<const char*> createTypes = { ".png", ".jpg", ".webp", ".gif" };
         std::vector<const char*> createTags = { "Unreal", "codes" };
+        ofstream addFile;
 
-        //if (!writeSave(file, createTypes))
-        //    cout << "value.txt creation failed! Stupid penits developer's fault" << endl;
-        if (!newWriteSave(file, createTypes, createTags))
-            cout << "value.txt creation failed! Stupid penits developer's fault" << endl;
+        openFileEdit(addFile, saveFile);
+        if (!newWriteSave(file, createTypes, addFile, 1, false))
+            cout << "value.txt creation failed! Error in file types" << endl;
+
+        if (!newWriteSave(file, createTags, addFile, 2, false))
+            cout << "value.txt creation failed! Error in tags" << endl;
+
+        // Add the new types and tags into the a standard vector
         for (const char* files : createTypes)
             Enum::folderTypes.push_back(files);
-
         for (const char* tags : createTags)
             Enum::folderTags.push_back(tags);
+
+        closeFileEdit(addFile);
     }
     else {
         cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl;
@@ -356,8 +299,6 @@ void readWriteFile(const char* file) {
 
         if (!readSaveNew(file))
             cout << file << " file reading failed" << endl;
-        //if(!readSave(file, Enum::folderTypes))
-        //    cout << file << " file reading failed" << endl;
     }
 }
 
@@ -462,11 +403,28 @@ std::vector<string> findAllTags(const string& tag) {
     int iter = 0;
     bool useFileNames = false;
     std::vector<string> fileNames;
+
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
+    auto t1 = high_resolution_clock::now();
+
     for (const auto& entry : filesystem::directory_iterator(path)) {
         fileNames = processFiles(fileNames, entry, tag, useFileNames);
         iter++;
     }
 
+    auto t2 = high_resolution_clock::now();
+
+    /* Getting number of milliseconds as an integer. */
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+
+    /* Getting number of milliseconds as a double. */
+    duration<double, std::milli> ms_double = t2 - t1;
+
+    std::cout << ms_int.count() << "ms" << " - " << ms_double.count() << "ms" << std::endl;
     cout << "Number of iterations: " << iter << endl;
     cout << "Amount of files: " << fileNames.size() << endl;
     coutPrint("//////////////////////////////////");
