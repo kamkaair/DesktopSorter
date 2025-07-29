@@ -20,6 +20,7 @@ using namespace std;
 std::string path;
 std::string rootFolderPath;
 const char* saveFile = "values.txt";
+bool debug = true;
 
 namespace Enum {
     enum class allowedCommands {
@@ -30,7 +31,7 @@ namespace Enum {
         remove,
         showfiles,
         showtype,
-        showtag,
+        debug,
         exit,
         clear,
 
@@ -56,7 +57,7 @@ Enum::allowedCommands selectOption(const char key) {
     case ('w'): return Enum::allowedCommands::add;
     case ('r'): return Enum::allowedCommands::remove;
     case ('q'): return Enum::allowedCommands::showtype;
-    case ('t'): return Enum::allowedCommands::showtag;
+    case ('t'): return Enum::allowedCommands::debug;
     case ('d'): return Enum::allowedCommands::showfiles;
     case ('e'): return Enum::allowedCommands::exit;
 
@@ -103,8 +104,10 @@ void createDirectory(const char* folder) {
         cout << folder << " created" << endl;
     }
     else {
-        cout << "'" << folder << "'" << " folder already exists, no new folders created!" << endl;
-        cout << endl;
+        if (debug) {
+            cout << "'" << folder << "'" << " folder already exists, no new folders created!" << endl;
+            cout << endl;
+        }
     }
 }
 
@@ -181,6 +184,7 @@ void readLines(string lineText, vector<const char*>& container, string items) {
     }
 
     cout << "Containing following " << items << ": " << endl;
+    cout << "{ ";
     for (int i = 0; i < strVec.size(); i++) {
         const char* strC = strVec[i].c_str();
         char* newChar = new char[strVec[i].size() + 1];
@@ -188,8 +192,9 @@ void readLines(string lineText, vector<const char*>& container, string items) {
         strcpy_s(newChar, strVec[i].size() + 1, strVec[i].c_str()); // convert from string to char
 
         container.push_back(newChar);
-        cout << container[i] << endl;
+        cout << container[i] << "; ";
     }
+    cout << "}" << endl;
     cout << endl;
 }
 
@@ -276,6 +281,7 @@ void readWriteFile(const char* file) {
         cout << endl;
         std::vector<const char*> createTypes = { ".png", ".jpg", ".webp", ".gif" };
         std::vector<const char*> createTags = { "Unreal", "codes" };
+
         ofstream addFile;
 
         openFileEdit(addFile, saveFile);
@@ -290,12 +296,13 @@ void readWriteFile(const char* file) {
             Enum::folderTypes.push_back(files);
         for (const char* tags : createTags)
             Enum::folderTags.push_back(tags);
+        //Enum::folderBool.push_back(createBool[0]);
 
         closeFileEdit(addFile);
     }
     else {
-        cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl;
-        cout << endl;
+        if(debug)
+            cout << "'" << file << "'" << " -save file already exists, using the existing one!" << endl; cout << endl;
 
         if (!readSaveNew(file))
             cout << file << " file reading failed" << endl;
@@ -392,10 +399,12 @@ std::vector<string> findAllFiles(const string& filetype) {
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
 
-    std::cout << ms_int.count() << "ms" << " - " << ms_double.count() << "ms" << std::endl;
-    std::cout << "Iterations: " << iter << std::endl;
-    cout << "Amount of files: " << fileNames.size() << endl;
-    coutPrint("//////////////////////////////////");
+    if (fileNames.size() > 0 || debug) {
+        std::cout << ms_int.count() << "ms" << " - " << ms_double.count() << "ms" << std::endl;
+        std::cout << "Iterations: " << iter << std::endl;
+        cout << "Amount of files: " << fileNames.size() << endl;
+        coutPrint("//////////////////////////////////");
+    }
     return fileNames;
 }
 
@@ -423,11 +432,12 @@ std::vector<string> findAllTags(const string& tag) {
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
-
-    std::cout << ms_int.count() << "ms" << " - " << ms_double.count() << "ms" << std::endl;
-    cout << "Number of iterations: " << iter << endl;
-    cout << "Amount of files: " << fileNames.size() << endl;
-    coutPrint("//////////////////////////////////");
+    if (fileNames.size() > 0 || debug) {
+        std::cout << ms_int.count() << "ms" << " - " << ms_double.count() << "ms" << std::endl;
+        cout << "Number of iterations: " << iter << endl;
+        cout << "Amount of files: " << fileNames.size() << endl;
+        coutPrint("//////////////////////////////////");
+    }
     return fileNames;
 }
 
@@ -444,6 +454,10 @@ bool loop(bool exit) {
     cout << "'W': Add an entry" << endl;
     cout << "'R': Remove an entry" << endl;
     cout << "'Q': Show all Filetypes/Tags" << endl;
+
+    cout << endl;
+
+    cout << "'T': Toggle additional prints: " << "(" << boolalpha << debug << ")" << endl;
 
     cout << endl;
 
@@ -484,7 +498,6 @@ bool loop(bool exit) {
         cin >> selection;
         cout << endl;
         if ((selection == 'y') || (selection == 'Y')) {
-
             if (!doesFileExist(saveFile))
                 readWriteFile(saveFile);
 
@@ -541,8 +554,10 @@ bool loop(bool exit) {
         cout << endl;
         break;
 
-    case (Enum::allowedCommands::showtag):
-        coutPrint("I'm a test button: ");
+    case (Enum::allowedCommands::debug):
+        debug = !debug;
+        cout << "Toggled additional info: " << boolalpha << debug << endl;
+        cout << endl;
         break;
 
     case (Enum::allowedCommands::exit):
