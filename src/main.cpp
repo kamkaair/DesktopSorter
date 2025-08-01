@@ -20,7 +20,7 @@ using namespace std;
 std::string path;
 std::string rootFolderPath;
 const char* saveFile = "values.txt";
-bool debug = true, clearAll = true;
+bool debug = true, clearAll = false;
 
 namespace Enum {
     enum class allowedCommands {
@@ -91,9 +91,10 @@ void coutPrint(string text) {
 }
 
 void eraseCLS(char selection) {
-    if(clearAll)
-    system("CLS"); //cmd clear
-    cout << "> " << selection << endl;
+    if (clearAll) {
+        system("CLS"); //cmd clear
+        cout << "> " << selection << endl;
+    }
 }
 
 void openFileEdit(ofstream& addFile, const char* file) {
