@@ -20,7 +20,7 @@ using namespace std;
 std::string path;
 std::string rootFolderPath;
 const char* saveFile = "values.txt";
-bool debug = true;
+bool debug = true, clearAll = true;
 
 namespace Enum {
     enum class allowedCommands {
@@ -32,6 +32,7 @@ namespace Enum {
         showfiles,
         showtype,
         debug,
+        clearall,
         exit,
         clear,
 
@@ -58,6 +59,7 @@ Enum::allowedCommands selectOption(const char key) {
     case ('r'): return Enum::allowedCommands::remove;
     case ('q'): return Enum::allowedCommands::showtype;
     case ('t'): return Enum::allowedCommands::debug;
+    case ('g'): return Enum::allowedCommands::clearall;
     case ('d'): return Enum::allowedCommands::showfiles;
     case ('e'): return Enum::allowedCommands::exit;
 
@@ -86,6 +88,12 @@ void coutPrint(string text) {
     cout << endl;
     cout << text << endl;
     cout << endl;
+}
+
+void eraseCLS(char selection) {
+    if(clearAll)
+    system("CLS"); //cmd clear
+    cout << "> " << selection << endl;
 }
 
 void openFileEdit(ofstream& addFile, const char* file) {
@@ -458,6 +466,7 @@ bool loop(bool exit) {
     cout << endl;
 
     cout << "'T': Toggle additional prints: " << "(" << boolalpha << debug << ")" << endl;
+    cout << "'G': Toggle clear history after command: " << "(" << boolalpha << clearAll << ")" << endl;
 
     cout << endl;
 
@@ -473,6 +482,8 @@ bool loop(bool exit) {
     switch (selectOption(selection)) {
         //Added an enum to hande OR, since switch case can't handle ORs in their condition... odd
     case (Enum::allowedCommands::singular):
+        eraseCLS(selection);
+
         coutPrint("What file would you like to target?");
         cout << "> ";
         cin >> input;
@@ -493,6 +504,8 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::all):
+        eraseCLS(selection);
+
         coutPrint("Are you sure you want to transfer all of the files? Y/N (.png, .jpg, .webp, .gif, .docx)");
         cout << "> ";
         cin >> selection;
@@ -516,6 +529,8 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::add):
+        eraseCLS(selection);
+
         cout << "Write a filename to ADD: ";
         std::cin >> input;
         cout << endl;
@@ -524,6 +539,8 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::remove):
+        eraseCLS(selection);
+
         cout << "Write a filename to REMOVE: ";
         std::cin >> input;
         cout << endl;
@@ -532,6 +549,8 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::showtype):
+        eraseCLS(selection);
+
         coutPrint("Showing all the available files...");
         cout << endl;
         cout << "All the filetypes and tags: " << endl;
@@ -546,6 +565,8 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::showfiles):
+        eraseCLS(selection);
+
         coutPrint("Showing all the desktop files: ");
         for (const auto& entry : filesystem::directory_iterator(path)) {
             string conEntry = entry.path().filename().string();
@@ -555,8 +576,18 @@ bool loop(bool exit) {
         break;
 
     case (Enum::allowedCommands::debug):
+        eraseCLS(selection);
+
         debug = !debug;
         cout << "Toggled additional info: " << boolalpha << debug << endl;
+        cout << endl;
+        break;
+
+    case (Enum::allowedCommands::clearall):
+        eraseCLS(selection);
+
+        clearAll = !clearAll;
+        cout << "Toggled clearing previous commands: " << boolalpha << clearAll << endl;
         cout << endl;
         break;
 
@@ -570,6 +601,7 @@ bool loop(bool exit) {
         break;
 
     default:
+        eraseCLS(selection);
         coutPrint("What?! Command not recognized");
     }
     return exit;
